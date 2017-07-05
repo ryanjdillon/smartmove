@@ -11,12 +11,12 @@ def postprocess_ann():
     import os
     import pandas
 
-    from rjdtools import yaml_tools
+    import yamlord
 
     # TODO update after model path saved to cfg_paths.yaml
     path_data = '/home/ryan/code/python/projects/bodycondition/'
 
-    cfg_paths = yaml_tools.read_yaml(os.path.join(path_data, 'cfg_paths.yaml'))
+    cfg_paths = yamlord.read_yaml(os.path.join(path_data, 'cfg_paths.yaml'))
 
     path_data = cfg_paths['root']
     path_csv   = cfg_paths['csv']
@@ -25,7 +25,7 @@ def postprocess_ann():
 
     path_out = os.path.join(path_data, path_ann, path_model)
 
-    cfg_ann = yaml_tools.read_yaml(os.path.join(path_out, 'cfg_ann.yaml'))
+    cfg_ann = yamlord.read_yaml(os.path.join(path_out, 'cfg_ann.yaml'))
 
     fname_field = 'field_experiments.p'
     fname_isotope = 'isotope_experiments.p'

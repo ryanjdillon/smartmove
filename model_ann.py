@@ -46,7 +46,7 @@ def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
     import theano
 
     import utils_smartmove
-    from rjdtools import yaml_tools
+    import yamlord
 
     # Environment settings - logging, Theano, load configuration, set paths
     #---------------------------------------------------------------------------
@@ -54,7 +54,7 @@ def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
     theano.config.compute_test_value = 'ignore'
 
     # Configuration settings
-    cfg = yaml_tools.read_yaml(path_cfg_ann)
+    cfg = yamlord.read_yaml(path_cfg_ann)
     if debug is True:
         for key in cfg['net_tuning'].keys():
             cfg['net_tuning'][key] = [cfg['net_tuning'][key][0],]
@@ -64,7 +64,7 @@ def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
     cfg['output']['results_path'] = 'theanets_{}'.format(now)
 
     # Define paths
-    paths = yaml_tools.read_yaml(file_cfg_paths)
+    paths = yamlord.read_yaml(file_cfg_paths)
 
     path_root       = paths['root']
     path_acc        = paths['acc']
@@ -190,7 +190,7 @@ def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
     #---------------------------------------------------------------------------
 
     # Save config as a `*.yaml` file to the output directory
-    yaml_tools.write_yaml(cfg, os.path.join(out_path, path_cfg_ann))
+    yamlord.write_yaml(cfg, os.path.join(out_path, path_cfg_ann))
 
     # Save output data to analysis output directory
     results_tune.to_pickle(os.path.join(out_path, cfg['output']['tune_fname']))

@@ -61,7 +61,7 @@ def load_lleo(path_data_acc, file_cal_acc, file_cal_speed, min_depth):
 
     import utils_prh
     import utils_plot
-    from rjdtools import yaml_tools
+    import yamlord
 
     # Parse tag model and id from directory/experiment name
     experiment_id = os.path.split(path_data_acc)[1].replace('-','')
@@ -69,7 +69,7 @@ def load_lleo(path_data_acc, file_cal_acc, file_cal_speed, min_depth):
     tag_id = int(experiment_id.split('_')[2])
 
     # Load calibrate data
-    cal_dict = yaml_tools.read_yaml(file_cal_acc)
+    cal_dict = yamlord.read_yaml(file_cal_acc)
 
     # Verify sensor ID of data matches ID of CAL
     # TODO add tag_id to pylleo cal, must enter manually now

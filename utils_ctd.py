@@ -229,7 +229,7 @@ def plot_transect_data(transects):
 if __name__ == '__main__':
     import os
 
-    from rjdtools import yaml_tools
+    import yamlord
 
     # Study location and max depth
     # 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
@@ -239,7 +239,7 @@ if __name__ == '__main__':
 
     ## Read data
     #cfg_path = './cfg_paths.yaml'
-    #paths = yaml_tools.read_yaml(cfg_path)
+    #paths = yamlord.read_yaml(cfg_path)
     #paths_ctd = os.path.join(paths['root'], path['ctd'])
     ctd_mat_file = ('/home/ryan/Desktop/edu/01_PhD/projects/smartmove/data_coexist/'
                    'data_ctd/kaldfjorden2016_inner.mat')

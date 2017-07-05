@@ -189,9 +189,9 @@ def add_bodydensity_to_experiments(path_field, path_isotope):
 def make_field_isotope():
     import os
 
-    from rjdtools import yaml_tools
+    import yamlord
 
-    paths = yaml_tools.read_yaml('./cfg_paths.yaml')
+    paths = yamlord.read_yaml('./cfg_paths.yaml')
 
     path_root = paths['root']
     path_csv = paths['csv']
@@ -221,7 +221,7 @@ def compile_experiments(path_root, path_glide, cfg, fname_sgls,
     import pandas
 
     import utils
-    from rjdtools import yaml_tools
+    import yamlord
 
     # List of paths to process
     path_exps = list()
@@ -347,7 +347,7 @@ def create_ann_inputs(path_root, path_acc, path_glide, path_ann, path_csv,
     import os
     import pandas
 
-    from rjdtools import yaml_tools
+    import yamlord
 
     def insert_field_col_to_sgls(sgls, field):
         '''Insert bodycondition from nearest date in field to sgls dataframes'''
@@ -374,7 +374,7 @@ def create_ann_inputs(path_root, path_acc, path_glide, path_ann, path_csv,
                                   'composition dataframe'.format(exp_id))
         return sgls
 
-    cfg_analysis = yaml_tools.read_yaml('./cfg_ann.yaml')
+    cfg_analysis = yamlord.read_yaml('./cfg_ann.yaml')
 
     # Compile subglide inputs for all experiments
     exps_all, sgls_all, dives_all = compile_experiments(path_root,
@@ -417,9 +417,9 @@ def __add_fields(df, key_list, fill_value):
 
 
 def make_model_inputs():
-    from rjdtools import yaml_tools
+    import yamlord
 
-    paths      = yaml_tools.read_yaml('./cfg_paths.yaml')
+    paths      = yamlord.read_yaml('./cfg_paths.yaml')
     path_root  = paths['root']
     path_acc   = paths['acc']
     path_glide = paths['glide']
