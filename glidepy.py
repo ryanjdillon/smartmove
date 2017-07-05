@@ -49,7 +49,6 @@ J:
 # TODO add experiment info: # dives, # subglides asc/des in cfg_filter.yaml
 # TODO look into t_max / t_max yaml
 # TODO use name convention in rest of repo: fname_, path_, etc.
-# TODO copy yaml_tools to bodycondition, remove external import
 # TODO GL and dives ind saved in masks? have routine that calcs dive info
 # TODO move config glide, sgl, filter to default yaml files?
 # TODO get rid of dives and glide_ratios
@@ -63,7 +62,7 @@ import click
 
 @click.command(help='Calculate dive statistics for body condition predictions')
 
-@click.option('--path-cfg-paths', prompt=True, default='./cfg_paths.yaml',
+@click.option('--path-project', prompt=True, default='./cfg_paths.yaml',
               help='Path to cfg_paths.yaml')
 
 @click.option('--debug', prompt=True, default=False, type=bool,
@@ -72,51 +71,41 @@ import click
 @click.option('--plots', prompt=True, default=True, type=bool,
               help='Plot diagnostic plots')
 
-def run_all(path_cfg_paths, debug=False, plots=True):
-    from rjdtools import yaml_tools
+def run_all(path_project, debug=False, plots=True):
+    import yamlord
     import utils
 
-    cfg_paths = yaml_tools.read_yaml(path_cfg_paths)
+    cfg_project = yamlord.read_yaml(path_project, 'cfg_project.yaml')
+    cfg_paths   = cfg_project['paths']
+    cfg_cal   = cfg_project['cal']
 
-    path_root  = cfg_paths['root']
     path_acc   = cfg_paths['acc']
     path_glide = cfg_paths['glide']
 
-    # Use debug defaults
-    if debug is True:
+    # Generate list of paths in acc data directory
+    path_exps = list()
+    for path_exp in os.listdir(os.path.join(path_project, path_acc)):
 
-        path_exp       = cfg_paths['acc_cal'][34839]
-        path_cal_acc   = cfg_paths['acc_cal'][34839]
-        path_cfg_glide = cfg_paths['acc_cal'][34839]
+        # Only process directories
+        if os.path.isdir(os.path.join(path_project, path_acc, path_exp)):
 
-        path_exps   = [path_exp,]
-        process_ind = [0,]
+            path_exps.append(path_exp)
 
-    # Get user selection for data paths to process
-    elif debug is False:
+    # Get user selection of acc paths to process
+    path_exps = sorted(path_exps)
+    msg = 'Enter paths numbers to process:\n'
+    process_ind = utils.get_dir_indices(msg, path_exps)
 
-        path_exps = list()
-        # Process all experiments in `path_acc`
-        for path_exp in os.listdir(os.path.join(path_root, path_acc)):
-
-            # Only process directories
-            if os.path.isdir(os.path.join(path_root, path_acc, path_exp)):
-
-                path_exps.append(path_exp)
-
-        path_exps = sorted(path_exps)
-        msg = 'Enter paths numbers to process:\n'
-        process_ind = utils.get_dir_indices(msg, path_exps)
-
-    # Process all experiments in accelerometer data path
+    # Process selected acc experiments
     for i in process_ind:
         path_exp = path_exps[i]
 
         # Get correct calibration path given tag ID number
+        tag_model = path_exp.replace('-','').split('_')[1].lower()
         tag_id = int(path_exp.split('_')[2])
         year   = int(path_exp[:4])
         month  = int(path_exp[4:6])
-        path_cal_acc = cfg_paths['acc_cal'][tag_id][year][month]
+        path_cal_acc = cfg_cal[model][tag_id][year][month]
 
         print('Tag calibration file path: {}'.format(path_cal_acc))
 
@@ -126,7 +115,7 @@ def run_all(path_cfg_paths, debug=False, plots=True):
         print('Processing: {}'.format(path_exp))
 
         # Run glide analysis
-        cfg_glide, sensors, sgls, dives, glide_ratio = lleo_glide_analysis(path_root,
+        cfg_glide, sensors, sgls, dives, glide_ratio = lleo_glide_analysis(path_project,
                                                                   path_acc,
                                                                   path_glide,
                                                                   path_exp,
@@ -137,14 +126,14 @@ def run_all(path_cfg_paths, debug=False, plots=True):
 
 
 
-def lleo_glide_analysis(path_root, path_acc, path_glide, path_exp,
+def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
         path_cal_acc, plots=True, debug=False):
     '''Run glide analysis with little leonarda data'''
     from collections import OrderedDict
     import numpy
     import os
 
-    from rjdtools import yaml_tools
+    import yamlord
     import utils
     import utils_lleo
     import pyotelem.plot
@@ -155,9 +144,9 @@ def lleo_glide_analysis(path_root, path_acc, path_glide, path_exp,
     fname_cal_speed = 'speed_calibrations.csv'
 
     # Input paths
-    path_data_acc  = os.path.join(path_root, path_acc, path_exp)
-    file_cal_acc   = os.path.join(path_root, path_acc, path_cal_acc, fname_cal)
-    file_cal_speed = os.path.join(path_root, path_acc, fname_cal_speed)
+    path_data_acc  = os.path.join(path_project, path_acc, path_exp)
+    file_cal_acc   = os.path.join(path_project, path_acc, path_cal_acc, fname_cal)
+    file_cal_speed = os.path.join(path_project, path_acc, fname_cal_speed)
     # TODO review this implemenation later
     file_cfg_exp   = './cfg_experiments.yaml'
 
@@ -184,7 +173,7 @@ def lleo_glide_analysis(path_root, path_acc, path_glide, path_exp,
 
     # Output paths
     ignore = ['nperseg', 'peak_thresh', 'alpha', 'min_depth', 't_max, t_max']
-    out_data  = os.path.join(path_root, path_acc, path_exp)
+    out_data  = os.path.join(path_project, path_acc, path_exp)
     os.makedirs(out_data, exist_ok=True)
 
     # LOAD DATA
@@ -225,7 +214,7 @@ def lleo_glide_analysis(path_root, path_acc, path_glide, path_exp,
 
     # Save glide ratio dataframe
     dname_glide = utils.cat_keyvalues(cfg_glide, ignore)
-    out_glide = os.path.join(path_root, path_glide, path_exp, dname_glide)
+    out_glide = os.path.join(path_project, path_glide, path_exp, dname_glide)
     os.makedirs(out_glide, exist_ok=True)
     glide_ratio.to_pickle(os.path.join(out_glide, fname_glide_ratio))
 
@@ -324,12 +313,12 @@ def process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
     import pyotelem.seawater
     import pyotelem.signal
 
-    from rjdtools import yaml_tools
+    import yamlord
 
     # TODO cleanup later
     exp_idxs = [None, None]
     try:
-        cfg_exp = yaml_tools.read_yaml(file_cfg_exp)
+        cfg_exp = yamlord.read_yaml(file_cfg_exp)
     except:
         cfg_exp = OrderedDict()
 
@@ -351,7 +340,7 @@ def process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
         cfg_exp[path_exp] = OrderedDict()
         cfg_exp[path_exp]['start_idx'] = exp_idxs[0]
         cfg_exp[path_exp]['stop_idx']  = exp_idxs[1]
-        yaml_tools.write_yaml(cfg_exp, file_cfg_exp)
+        yamlord.write_yaml(cfg_exp, file_cfg_exp)
 
     # Creat dataframe for storing masks for various views of the data
     masks = pandas.DataFrame(index=range(len(sensors)), dtype=bool)
@@ -495,7 +484,7 @@ def process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
 
     ## Read data
     fname_ctd = 'kaldfjorden2016_inner.mat'
-    file_ctd_mat = os.path.join(paths['root'], path['ctd'], fname_ctd)
+    file_ctd_mat = os.path.join(paths['project'], path['ctd'], fname_ctd)
 
     transects = read_matlab(ctd_mat_file)
 
@@ -635,7 +624,7 @@ def save_config(cfg_add, path_cfg_yaml, name='parameters'):
     from collections import OrderedDict
     import datetime
 
-    from rjdtools import yaml_tools
+    import yamlord
     import utils
 
     cfg = OrderedDict()
@@ -651,7 +640,7 @@ def save_config(cfg_add, path_cfg_yaml, name='parameters'):
 
     cfg[name] = cfg_add
 
-    yaml_tools.write_yaml(cfg, path_cfg_yaml)
+    yamlord.write_yaml(cfg, path_cfg_yaml)
 
     return cfg
 
