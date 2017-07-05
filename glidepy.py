@@ -145,7 +145,6 @@ def lleo_glide_analysis(path_root, path_acc, path_glide, path_exp,
     import os
 
     from rjdtools import yaml_tools
-    import logger
     import utils
     import utils_lleo
     import pyotelem.plot
@@ -187,10 +186,6 @@ def lleo_glide_analysis(path_root, path_acc, path_glide, path_exp,
     ignore = ['nperseg', 'peak_thresh', 'alpha', 'min_depth', 't_max, t_max']
     out_data  = os.path.join(path_root, path_acc, path_exp)
     os.makedirs(out_data, exist_ok=True)
-
-    # Create logger object for displaying/writing progress of current routine
-    path_log = os.path.join(path_root, path_glide)
-    log = logger.Log(path_log, path_exp, term_on=True, write_on=False)
 
     # LOAD DATA
     #----------
