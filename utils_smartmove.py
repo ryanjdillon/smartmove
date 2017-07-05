@@ -339,8 +339,9 @@ def __add_ids_to_df(df, exp_id, animal_id=None, tag_id=None):
     return df
 
 
-def create_ann_inputs(path_root, path_acc, path_glide, path_ann, path_csv, fname_field_p,
-        fname_sgls, fname_mask_sgls, sgl_cols, manual_selection=True):
+def create_ann_inputs(path_root, path_acc, path_glide, path_ann, path_csv,
+        fname_field_p, fname_sgls, fname_mask_sgls, sgl_cols,
+        manual_selection=True):
     '''Compile all experiment data for ann model input'''
     import numpy
     import os
@@ -404,51 +405,8 @@ def create_ann_inputs(path_root, path_acc, path_glide, path_ann, path_csv, fname
 
     # Save output
     sgls.to_pickle(os.path.join(path_root, path_ann, 'sgls_all.p'))
-    #exps_all.to_pickle(os.path.join(path_root, path_mcmc, 'exps_all.p'))
-    #dives_all.to_pickle(os.path.join(path_root, path_mcmc, 'dives_all.p'))
 
     return exps_all, sgls, dives_all
-
-
-def create_mcmc_inputs(path_root, path_glide, path_mcmc, fname_sgls,
-        fname_mask_sgls, sgl_cols, manual_selection=True):
-    '''Add MCMC distribution fields to each MCMC input dataframe'''
-    import os
-    import numpy
-
-    from rjdtools import yaml_tools
-
-    # TODO could create filter routine here to pass to compiler, pass arguments
-    # for each input configuration, to generate inputs for model
-
-    cfg_analysis = yaml_tools.read_yaml('./cfg_ann.yaml')
-
-    # Compile subglide inputs for all experiments
-    exps_all, sgls_all, dives_all = compile_experiments(path_root,
-                                                        path_glide,
-                                                        cfg_analysis['data'],
-                                                        fname_sgls,
-                                                        fname_mask_sgls)
-
-    # Desired columns to extract from subglide analysis output
-    sgls_all = sgls_all[sgl_cols]
-
-    # Add for fields MCMC analysis output
-    exp_new  = ['CdAm',     'CdAm_shape',     'CdAm_rate',
-                'bdensity', 'bdensity_shape', 'bdensity_rate']
-    sgl_new  = ['a', 'a_mu', 'a_tau']
-    dive_new = ['v_air', 'v_air_shape', 'v_air_rate']
-
-    exps_all  = __add_fields(exps_all, exp_new, numpy.nan)
-    sgls_all  = __add_fields(sgls_all, sgl_new, numpy.nan)
-    dives_all = __add_fields(dives_all, dive_new, numpy.nan)
-
-    # Save output
-    exps_all.to_pickle(os.path.join(path_root, path_mcmc, 'exps_all.p'))
-    sgls_all.to_pickle(os.path.join(path_root, path_mcmc, 'sgls_all.p'))
-    dives_all.to_pickle(os.path.join(path_root, path_mcmc, 'dives_all.p'))
-
-    return exps_all, sgls_all, dives_all
 
 
 def __add_fields(df, key_list, fill_value):
@@ -465,7 +423,6 @@ def make_model_inputs():
     path_root  = paths['root']
     path_acc   = paths['acc']
     path_glide = paths['glide']
-    path_mcmc  = paths['mcmc']
     path_ann   = paths['ann']
     path_csv    = paths['csv']
 
@@ -474,14 +431,8 @@ def make_model_inputs():
 
     # Compile processed subglide data for MCMC model
     sgl_cols = ['exp_id', 'dive_id', 'mean_speed', 'mean_depth',
-                'mean_sin_pitch', 'mean_swdensity', 'mean_a', 'SE_speed_vs_time']
-
-    mcmc_exps, mcmc_sgls, mcmc_dives = create_mcmc_inputs(path_root,
-                                                          path_glide,
-                                                          path_mcmc,
-                                                          fname_sgls,
-                                                          fname_mask_sgls,
-                                                          sgl_cols)
+                'mean_sin_pitch', 'mean_swdensity', 'mean_a',
+                'SE_speed_vs_time']
 
     # Compile processed subglide data for ANN model
     sgl_cols = ['exp_id', 'mean_speed', 'total_depth_change',
@@ -498,10 +449,10 @@ def make_model_inputs():
                                                       fname_mask_sgls,
                                                       sgl_cols)
 
-    return mcmc_exps, mcmc_sgls, mcmc_dives, ann_exps, ann_sgls, ann_dives
+    return ann_exps, ann_sgls, ann_dives
 
 
 if __name__ == '__main__':
 
-    mcmc_exps, mcmc_sgls, mcmc_dives, ann_exps, ann_sgls, ann_dives = make_model_inputs()
+    ann_exps, ann_sgls, ann_dives = make_model_inputs()
     field, isotope = make_field_isotope()
