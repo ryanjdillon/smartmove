@@ -30,15 +30,15 @@ Documentation
 Code contributers
 =================
 
-  * **Ryan J. Dillon** - All neural network code (using the `Theanets`
+  * **Ryan J. Dillon** - All neural network code (using the theanets_ python
     package), CTD, and plotting code. The `glideid.py` code for glide
     identification is adapted from code written by Lucia Martina Martin Lopez
     (see below). That script uses the library
     pyotelem_ with respective
     authorship listed in that repository.
 
-  * **Lucia Martina Martin Lopez** - Original glide identification code has
-    written in Matlab
+  * **Lucia Martina Martin Lopez** - Original glide identification code written
+    in Matlab
 
   * Code taken or adapted from Stackoverflow_ is in the public domain, and
     the respective posts where it was found should be linked to in the document
