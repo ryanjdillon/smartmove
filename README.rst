@@ -31,15 +31,18 @@ Code contributers
     package), CTD, and plotting code. The `glideid.py` code for glide
     identification is adapted from code written by Lucia Martina Martin Lopez
     (see below). That script uses the library
-    [`pyotelem`](https://bitbucket.org/ryanjdillon/pyotelem) with respective
+    pyotelem_ with respective
     authorship listed in that repository.
 
   * **Lucia Martina Martin Lopez** - Original glide identification code has
     written in Matlab
 
-  * Code taken or adapted from [`Stackoverflow`](https://stackoverflow.com/) is
-    in the public domain, and the respective posts where it was found should be
-    linked to in the document string of the routines in which it was used.
+  * Code taken or adapted from Stackoverflow_ is in the public domain, and
+    the respective posts where it was found should be linked to in the document
+    string of the routines in which it was used.
+
+.. _Stackoverflow: https://stackoverflow.com/
+.. _pyotelem: https://bitbucket.org/ryanjdillon/pyotelem)
 
 Other contributers
 ==================
@@ -51,5 +54,9 @@ Other contributers
 
 Thanks
 ======
-The `theanets` package was used for implementing the aritifical neural network
-and is great work. Thanks Leif Johnson](https://github.com/lmjohns3)!
+The `theanets`_ package was used for implementing the aritifical neural network
+and is great work. Thanks `Leif Johnson`__!
+
+.. _theanets: https://github.com/lmjohns3/theanets
+.. _leif: https://github.com/lmjohns3
+__ leif_
