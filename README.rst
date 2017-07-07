@@ -10,6 +10,7 @@ While currently developed primarily for the use in a specific project, the code
 is written as general as was possible during the project that will hopefully be
 easily extended and applied in future projects.
 
+|
 Installation
 ============
 
@@ -19,11 +20,13 @@ Installation
 .. codeblock:: bash
     pip install git@bitbucket.org:ryanjdillon/smartmove.git
 
+|
 Documentation
 =============
 
 * Coming shortly
 
+|
 Code contributers
 =================
 
@@ -44,6 +47,7 @@ Code contributers
 .. _Stackoverflow: https://stackoverflow.com/
 .. _pyotelem: https://bitbucket.org/ryanjdillon/pyotelem)
 
+|
 Other contributers
 ==================
 
@@ -51,7 +55,7 @@ Other contributers
 
   * **Ippei Suzuki** - Propeller speed calibration calculations
 
-
+|
 Thanks
 ======
 The `theanets`_ package was used for implementing the aritifical neural network
