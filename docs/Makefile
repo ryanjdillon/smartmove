@@ -3,8 +3,8 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = python -msphinx
-SPHINXPROJ    = smartmove
+SPHINXBUILD   = sphinx-build
+SPHINXPROJ    = Smartmove
 SOURCEDIR     = source
 BUILDDIR      = build
 
