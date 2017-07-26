@@ -141,7 +141,7 @@ def add_bodydensity_to_experiments(path_field, path_isotope):
     import numpy
     import pandas
 
-    import utils_seal_physio
+    import pyotelem
 
     # Load experiments and convert datetimes to datetime
     field = pandas.read_csv(path_field, comment='#')
@@ -154,7 +154,7 @@ def add_bodydensity_to_experiments(path_field, path_isotope):
     isotope = pandas.read_csv(path_isotope, comment='#')
 
     # Get percent body compositions, including density - what we want
-    perc_comps = utils_seal_physio.lip2dens(isotope['fat_perc'])
+    perc_comps = pyotelem.physio_seal.lip2dens(isotope['fat_perc'])
     isotope['density_kgm3'] = perc_comps['density']*1000
 
     # List of columns to add to experiments from isotope-isotope data
