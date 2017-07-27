@@ -366,7 +366,7 @@ def _tune_net(train, valid, test, targets, configs, n_features, n_targets, plots
         List of unique targets (bins) generated during data splitting
     configs: dict
         Dictionary of all permutation of network configuration parameters
-        defined in `cfg_ann.yaml` file
+        defined in `cfg_ann.yml` file
     n_features: int
         Number of features (inputs) for configuring input layer of network
     n_targets: int
@@ -539,9 +539,9 @@ def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
     Args
     ----
     file_cfg_paths: str
-        Full path to `cfg_paths.yaml` file
+        Full path to `cfg_paths.yml` file
     path_cfg_ann: str
-        Full path to `cfg_ann.yaml` file
+        Full path to `cfg_ann.yml` file
     debug: bool
         Swith for running single network configuration
     plots: bool
@@ -720,7 +720,7 @@ def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
     # Save results and configuration to output directory
     #---------------------------------------------------------------------------
 
-    # Save config as a `*.yaml` file to the output directory
+    # Save config as a `*.yml` file to the output directory
     yamlord.write_yaml(cfg, os.path.join(out_path, path_cfg_ann))
 
     # Save output data to analysis output directory
@@ -744,8 +744,8 @@ if __name__ == '__main__':
     debug = False
     plots = False
 
-    file_cfg_paths = './cfg_paths.yaml'
-    path_cfg_ann   = './cfg_ann.yaml'
+    file_cfg_paths = './cfg_paths.yml'
+    path_cfg_ann   = './cfg_ann.yml'
 
     cfg, data, results = run(file_cfg_paths, path_cfg_ann, debug=debug,
                              plots=plots)

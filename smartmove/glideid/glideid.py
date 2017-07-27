@@ -46,7 +46,7 @@ J:
 
 # TODO CLARIFY `stroke_frq` vs `fluke rate` low pass vs high-pass signals
 
-# TODO add experiment info: # dives, # subglides asc/des in cfg_filter.yaml
+# TODO add experiment info: # dives, # subglides asc/des in cfg_filter.yml
 # TODO look into t_max / t_max yaml
 # TODO use name convention in rest of repo: fname_, path_, etc.
 # TODO GL and dives ind saved in masks? have routine that calcs dive info
@@ -62,8 +62,8 @@ J:
 #
 #@click.command(help='Calculate dive statistics for body condition predictions')
 #
-#@click.option('--path-project', prompt=True, default='./cfg_paths.yaml',
-#              help='Path to cfg_paths.yaml')
+#@click.option('--path-project', prompt=True, default='./cfg_paths.yml',
+#              help='Path to cfg_paths.yml')
 #
 #@click.option('--debug', prompt=True, default=False, type=bool,
 #              help='Return on debug output')
@@ -75,7 +75,7 @@ def run_all(path_project, debug=False, plots=True):
     import yamlord
     import utils
 
-    cfg_project = yamlord.read_yaml(path_project, 'cfg_project.yaml')
+    cfg_project = yamlord.read_yaml(path_project, 'cfg_project.yml')
     cfg_paths   = cfg_project['paths']
     cfg_cal   = cfg_project['cal']
 
@@ -140,7 +140,7 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     from . import utils_lleo
 
     # Input filenames
-    fname_cal = 'cal.yaml'
+    fname_cal = 'cal.yml'
     fname_cal_speed = 'speed_calibrations.csv'
 
     # Input paths
@@ -148,12 +148,12 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     file_cal_acc   = os.path.join(path_project, path_acc, path_cal_acc, fname_cal)
     file_cal_speed = os.path.join(path_project, path_acc, fname_cal_speed)
     # TODO review this implemenation later
-    file_cfg_exp   = './cfg_experiments.yaml'
+    file_cfg_exp   = './cfg_experiments.yml'
 
     # Output filenames
-    fname_cfg_glide           = 'cfg_glide.yaml'
-    fname_cfg_sgl             = 'cfg_sgl.yaml'
-    fname_cfg_filt            = 'cfg_filter.yaml'
+    fname_cfg_glide           = 'cfg_glide.yml'
+    fname_cfg_sgl             = 'cfg_sgl.yml'
+    fname_cfg_filt            = 'cfg_filter.yml'
 
     fname_sensors             = 'pydata_{}.p'.format(path_exp)
     fname_dives               = 'data_dives.p'

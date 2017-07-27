@@ -16,9 +16,9 @@ def create_project(path_project):
     module = importlib.util.find_spec('smartmove')
     module_path  = os.path.split(module.origin)[0]
 
-    fname_cfg_project = 'cfg_project.yaml'
-    fname_cfg_exp = 'cfg_experiments.yaml'
-    fname_cfg_ann = 'cfg_ann.yaml'
+    fname_cfg_project = 'cfg_project.yml'
+    fname_cfg_exp = 'cfg_experiments.yml'
+    fname_cfg_ann = 'cfg_ann.yml'
     for fname in [fname_cfg_project, fname_cfg_exp, fname_cfg_ann]:
         src = os.path.join(module_path, 'templates', fname)
         dst = os.path.join(path_project, fname)

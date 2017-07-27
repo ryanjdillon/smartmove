@@ -58,8 +58,8 @@ The following files will be created in the experiments data directory:
 
 .. codeblock:: bash
     ./20160418_W190PD3GT_34840_Skinny_2Neutral
-    ├── cal.yaml
-    ├── meta.yaml
+    ├── cal.yml
+    ├── meta.yml
     └── pydata_20160418_W190PD3GT_34840_Skinny_2Neutral.p
 
 

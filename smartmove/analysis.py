@@ -6,8 +6,8 @@ class Analysis(object):
 
         self.path_project = path_project
 
-        fname_cfg_project = 'cfg_project.yaml'
-        fname_cfg_project = 'cfg_ann.yaml'
+        fname_cfg_project = 'cfg_project.yml'
+        fname_cfg_project = 'cfg_ann.yml'
         path_cfg_project = os.path.join(path_project, fname_cfg_project)
         path_cfg_ann = os.path.join(path_project, fname_cfg_ann)
 

@@ -191,7 +191,7 @@ def make_field_isotope():
 
     import yamlord
 
-    paths = yamlord.read_yaml('./cfg_paths.yaml')
+    paths = yamlord.read_yaml('./cfg_paths.yml')
 
     path_root = paths['root']
     path_csv = paths['csv']
@@ -374,7 +374,7 @@ def create_ann_inputs(path_root, path_acc, path_glide, path_ann, path_csv,
                                   'composition dataframe'.format(exp_id))
         return sgls
 
-    cfg_analysis = yamlord.read_yaml('./cfg_ann.yaml')
+    cfg_analysis = yamlord.read_yaml('./cfg_ann.yml')
 
     # Compile subglide inputs for all experiments
     exps_all, sgls_all, dives_all = compile_experiments(path_root,
@@ -419,7 +419,7 @@ def __add_fields(df, key_list, fill_value):
 def make_model_inputs():
     import yamlord
 
-    paths      = yamlord.read_yaml('./cfg_paths.yaml')
+    paths      = yamlord.read_yaml('./cfg_paths.yml')
     path_root  = paths['root']
     path_acc   = paths['acc']
     path_glide = paths['glide']

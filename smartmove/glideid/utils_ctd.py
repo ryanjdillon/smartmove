@@ -238,7 +238,7 @@ if __name__ == '__main__':
     max_depth = 18 # meters
 
     ## Read data
-    #cfg_path = './cfg_paths.yaml'
+    #cfg_path = './cfg_paths.yml'
     #paths = yamlord.read_yaml(cfg_path)
     #paths_ctd = os.path.join(paths['root'], path['ctd'])
     ctd_mat_file = ('/home/ryan/Desktop/edu/01_PhD/projects/smartmove/data_coexist/'
