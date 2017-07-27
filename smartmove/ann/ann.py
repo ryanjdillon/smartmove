@@ -1,231 +1,16 @@
+def get_attr(results, group, attr):
+    import numpy
+
+    n_results = len(results)
+    attrs = [results['monitors'][i][group][attr][-1] for i in range(n_results)]
+
+    return numpy.asarray(attrs)
+
 
 # TODO save most recent model path to paths yaml
 
-def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
-    '''
-    Compile subglide data, tune network architecture and test dataset size
 
-    Args
-    ----
-    file_cfg_paths: str
-        Full path to `cfg_paths.yaml` file
-    path_cfg_ann: str
-        Full path to `cfg_ann.yaml` file
-    debug: bool
-        Swith for running single network configuration
-    plots: bool
-        Switch for generating diagnostic plots after each network training
-
-    Returns
-    -------
-    cfg: dict
-        Dictionary of network configuration parameters used
-    data: tuple
-        Tuple collecting training, validation, and test sets. Also includes bin
-        deliniation values
-    results: tuple
-        Tuple collecting results dataframes and confusion matrices
-
-    Note
-    ----
-    The validation set is split into `validation` and `test` sets, the
-    first used for initial comparisons of various net configuration
-    accuracies and the second for a clean test set to get an true accuracy,
-    as reusing the `validation` set can cause the routine to overfit to the
-    validation set.
-    '''
-
-    # TODO add starttime, finishtime, git/versions
-
-    from collections import OrderedDict
-    import climate
-    import datetime
-    import numpy
-    import os
-    import pickle
-    import theano
-
-    import utils_smartmove
-    import yamlord
-
-    # Environment settings - logging, Theano, load configuration, set paths
-    #---------------------------------------------------------------------------
-    climate.enable_default_logging()
-    theano.config.compute_test_value = 'ignore'
-
-    # Configuration settings
-    cfg = yamlord.read_yaml(path_cfg_ann)
-    if debug is True:
-        for key in cfg['net_tuning'].keys():
-            cfg['net_tuning'][key] = [cfg['net_tuning'][key][0],]
-
-    # Define output directory and create if does not exist
-    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    cfg['output']['results_path'] = 'theanets_{}'.format(now)
-
-    # Define paths
-    paths = yamlord.read_yaml(file_cfg_paths)
-
-    path_root       = paths['root']
-    path_acc        = paths['acc']
-    glide_path      = paths['glide']
-    path_ann        = paths['ann']
-    path_csv        = paths['csv']
-    fname_field     = 'field_experiments.p'
-    fname_sgls      = 'data_sgls.p'
-    fname_mask_sgls = 'mask_sgls_filt.p'
-    fname_ann_sgls  = 'sgls_all.p'
-    fname_ind_train = 'ind_train.p'
-    fname_ind_valid = 'ind_valid.p'
-    fname_ind_test  = 'ind_test.p'
-
-    fname_tune_cms  = 'tune_cms.p'
-    fname_data_cms  = 'data_cms.p'
-
-    # Print input data configuration
-    print_dict_values(cfg['data'])
-
-    # Generate experiments/isotope pandas from csv
-    import utils_smartmove
-    field, isotope = utils_smartmove.make_field_isotope()
-
-    # Compile, split, and normalize data
-    #---------------------------------------------------------------------------
-    sgl_cols = cfg['data']['sgl_cols'] + cfg['net_all']['features']
-
-    # Compile output from glides into single input dataframe
-    _, sgls, _ = utils_smartmove.create_ann_inputs(path_root,
-                                              path_acc,
-                                              glide_path,
-                                              path_ann,
-                                              path_csv,
-                                              fname_field,
-                                              fname_sgls,
-                                              fname_mask_sgls,
-                                              sgl_cols,
-                                              manual_selection=True)
-
-    # Create output directory if it does not exist
-    out_path = os.path.join(path_root, path_ann, cfg['output']['results_path'])
-    os.makedirs(out_path, exist_ok=True)
-
-    # Save sgls data to output directory
-    sgls.to_pickle(os.path.join(out_path, fname_ann_sgls))
-
-    # Drop rows missing data
-    sgls = sgls.dropna()
-
-    print('\nSplit and normalize input/output data')
-    features   = cfg['net_all']['features']
-    target     = cfg['net_all']['target']
-    n_targets  = cfg['net_all']['n_targets']
-    valid_frac = cfg['net_all']['valid_frac']
-
-    # Normalize input (features) and output (target)
-    nsgls, bins = normalize_data(sgls, features, target, n_targets)
-    bins_list = [float(b) for b in bins]
-
-    # Get indices of train, validation and test datasets
-    ind_train, ind_valid, ind_test = get_split_indexes(nsgls, valid_frac)
-
-    # Split dataframes into train, validation and test  (features, targets) tuples
-    train, valid, test = create_datasets(nsgls, ind_train, ind_valid, ind_test,
-                                         features, target)
-
-    # Save information on input data to config
-    cfg['net_all']['n_train'] = len(train[0])
-    cfg['net_all']['n_valid'] = len(valid[0])
-    cfg['net_all']['n_test']  = len(test[0])
-    cfg['net_all']['targets'] = bins_list
-
-
-    # Tuning - find optimal network architecture
-    #---------------------------------------------------------------------------
-    print('\nTune netork configuration')
-
-    # Get all dict of all configuration permutations of params in `tune_params`
-    configs = get_configs(cfg['net_tuning'])
-
-    # Cycle through configurations storing configuration, net in `results_tune`
-    n_features = len(cfg['net_all']['features'])
-    n_targets = cfg['net_all']['n_targets']
-
-    print('\nNumber of features: {}'.format(n_features))
-    print('Number of targets: {}\n'.format(n_targets))
-
-    results_tune, tune_accuracy, tune_cms = tune_net(train,
-                                                     valid,
-                                                     test,
-                                                     bins,
-                                                     configs,
-                                                     n_features,
-                                                     n_targets,
-                                                     plots)
-
-    # Get neural net configuration with best accuracy
-    best_config = get_best(results_tune, 'config')
-
-
-    # Test effect of dataset size
-    #---------------------------------------------------------------------------
-    print('\nRun percentage of datasize tests')
-
-    # Get randomly sorted and subsetted datasets to test effect of dataset_size
-    # i.e. - a dataset with the first `subset_fraction` of samples.
-    subset_fractions = cfg['net_dataset_size']['subset_fractions']
-    results_dataset, data_accuracy, data_cms = test_dataset_size(best_config,
-                                                                 train,
-                                                                 valid,
-                                                                 test,
-                                                                 bins,
-                                                                 n_features,
-                                                                 n_targets,
-                                                                 subset_fractions)
-
-    print('\nTest data accuracy (Configuration tuning): {}'.format(tune_accuracy))
-    print('Test data accuracy (Datasize test):        {}'.format(data_accuracy))
-
-
-    # Save results and configuration to output directory
-    #---------------------------------------------------------------------------
-
-    # Save config as a `*.yaml` file to the output directory
-    yamlord.write_yaml(cfg, os.path.join(out_path, path_cfg_ann))
-
-    # Save output data to analysis output directory
-    results_tune.to_pickle(os.path.join(out_path, cfg['output']['tune_fname']))
-    results_dataset.to_pickle(os.path.join(out_path, cfg['output']['dataset_size_fname']))
-
-    # Save train, validation, test datasets
-    pickle.dump(train, open(os.path.join(out_path, fname_ind_train), 'wb'))
-    pickle.dump(valid, open(os.path.join(out_path, fname_ind_valid), 'wb'))
-    pickle.dump(test, open(os.path.join(out_path, fname_ind_test), 'wb'))
-
-    pickle.dump(tune_cms, open(os.path.join(out_path, fname_tune_cms), 'wb'))
-    pickle.dump(data_sms, open(os.path.join(out_path, fname_data_cms), 'wb'))
-
-    return cfg, (train, valid, test, bins), (results_tune, results_dataset,
-                                             tune_cms, data_cms)
-
-
-def print_results_accuracy(results_dataset, test):
-    '''Print accuracies of all nets in results on test dataset'''
-
-    for i, net in enumerate(results_dataset['net']):
-        accuracy = net.score(test[0], test[1])
-        print('[{}] accuracy: {}'.format(i, accuracy))
-
-    return None
-
-
-def n_hidden(n_input, n_output, n_train_samples, alpha):
-    # http://stats.stackexchange.com/a/136542/16938
-    # Alpha is scaling factor between 2-10
-    n_hidden = n_samples/(alpha*(n_input+n_output))
-    return n_hidden
-
-
-def normalize_data(df, features, target, n_targets):
+def _normalize_data(df, features, target, n_targets):
     '''Normalize features and target values
 
     Args
@@ -257,15 +42,15 @@ def normalize_data(df, features, target, n_targets):
     data_norm = normalize(data_array, norm='l2', axis=1).astype('f4')
     '''
 
-    def mean_normalize(df, keys):
+    def _mean_normalize(df, keys):
         return df[keys].div(df.sum(axis=0)[keys], axis=1)[keys]
 
-    def unit_normalize(df, keys):
+    def _unit_normalize(df, keys):
         data = df[keys].values
         #(df[keys] - df[keys].min())/(df[keys].max()-df[keys].min())
         return (data - data.min(axis=0))/(data.max(axis=0) - data.min(axis=0))
 
-    def bin_column(df, target, n_targets):
+    def _bin_column(df, target, n_targets):
         # bin_means = [data[digitized == i].mean() for i in range(1, len(bins))]
         import numpy
 
@@ -279,15 +64,15 @@ def normalize_data(df, features, target, n_targets):
         return numpy.digitize(df[target], bins), bins
 
     # Normalize inputs
-    df[features] = unit_normalize(df, features)
+    df[features] = _unit_normalize(df, features)
 
     # Bin outputs
-    df['y_binned'], bins = bin_column(df, target, n_targets)
+    df['y_binned'], bins = _bin_column(df, target, n_targets)
 
     return df, bins
 
 
-def get_split_indexes(df, valid_frac):
+def _split_indices(df, valid_frac):
     '''Get randomly selected row indices for train, validation, and test data
     Args
     ----
@@ -324,7 +109,7 @@ def get_split_indexes(df, valid_frac):
     return ind_train, ind_valid, ind_test
 
 
-def create_datasets(df, ind_train, ind_valid, ind_test, features, target):
+def _create_datasets(df, ind_train, ind_valid, ind_test, features, target):
     '''
 
     Args
@@ -365,74 +150,7 @@ def create_datasets(df, ind_train, ind_valid, ind_test, features, target):
     return train, valid, test
 
 
-
-
-def plot_confusion_matrix(cm, targets, normalize=False, title='', cmap=None,
-        xlabel_rotation=0):
-    '''This function prints and plots the confusion matrix.
-
-    Normalization can be applied by setting `normalize=True`.
-
-    Plotting routind modified from this code: https://goo.gl/kYHMxk
-    '''
-    import itertools
-    import matplotlib.pyplot as plt
-    import numpy
-
-    if cmap is None:
-        cmap = plt.cm.PuBuGn
-
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, numpy.newaxis]
-        print('\n{}, normalized'.format(title))
-    else:
-        print('\n{}, without normalization'.format(title))
-
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar(label='Number of predictions')
-    n_targets = len(targets)
-    yticks = numpy.arange(n_targets)
-    xticks = yticks #- (numpy.diff(yticks)[0]/3)
-    plt.xticks(xticks, numpy.round(targets, 1), rotation=xlabel_rotation)
-    plt.yticks(yticks, numpy.round(targets,1))
-
-    print(cm)
-
-    thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j],
-                 horizontalalignment='center',
-                 color='white' if cm[i, j] > thresh else 'black')
-
-    plt.ylabel('Observed bin')
-    plt.xlabel('Predicted bin')
-    plt.tight_layout()
-    plt.show()
-
-    return None
-
-
-def get_confusion_matrices(net, train, valid, targets):
-    '''Print and return an sklearn confusion matrix from the input net'''
-    from collections import OrderedDict
-    import numpy
-    import sklearn.metrics
-
-    # Filter targets to only those that were assigned to training values
-    targets = targets[sorted(list(numpy.unique(train[1])))]
-
-    # Show confusion matrices on the training/validation splits.
-    cms = OrderedDict()
-    for label, (X, y) in (('Training', train), ('Validation', valid)):
-        title = '{} confusion matrix'.format(label)
-        label = label.lower()
-        cms[label] = sklearn.metrics.confusion_matrix(y, net.predict(X))
-        plot_confusion_matrix(cms[label], targets, title=title)
-    return cms
-
-
-def get_configs(tune_params):
+def _get_configs(tune_params):
     '''Generate list of all possible configuration dicts from tuning params'''
     import itertools
 
@@ -450,7 +168,7 @@ def get_configs(tune_params):
     return configs
 
 
-def print_dict_values(cfg):
+def _print_dict_values(cfg):
     '''Print parameterization of input data to be analyzed'''
 
     labels = ['glides', 'sgls', 'filter']
@@ -630,7 +348,7 @@ def get_best(results, key):
     return results[key][best_idx]
 
 
-def tune_net(train, valid, test, targets, configs, n_features, n_targets, plots):
+def _tune_net(train, valid, test, targets, configs, n_features, n_targets, plots):
     '''Train nets with varying configurations and `validation` set
 
     The determined best configuration is then used to find the resulting
@@ -675,18 +393,15 @@ def tune_net(train, valid, test, targets, configs, n_features, n_targets, plots)
     import pandas
     import time
 
+    from . import utils
+
     tune_cols = ['config', 'net', 'accuracy', 'train_time']
     results_tune = pandas.DataFrame(index=range(len(configs)),
                                     columns=tune_cols, dtype=object)
-    #results_tune = numpy.zeros((len(configs),3), dtype=object)
-
     for i in range(len(configs)):
-
         t0 = time.time()
-
         net, accuracy, monitors = create_algorithm(train, valid, configs[i],
                                                    n_features, n_targets, plots)
-
         t1 = time.time()
 
         results_tune['config'][i]     = configs[i]
@@ -704,41 +419,12 @@ def tune_net(train, valid, test, targets, configs, n_features, n_targets, plots)
     print('Tuning test accuracy: {}'.format(test_accuracy))
 
     # Print confusion matrices for train and test
-    cms = get_confusion_matrices(best_net, train, test, targets)
+    cms = utils.get_confusion_matrices(best_net, train, test, targets)
 
     return results_tune, test_accuracy, cms
 
 
-def truncate_data(data, frac):
-    '''Reduce data rows to `frac` of original
-
-    Args
-    ----
-    data: Tuple containing numpy array of feature data and labels
-    frac: percetange of original data to return
-
-    Returns
-    -------
-    subset_frac: pandas.DataFrame
-        Slice of original dataframe with len(data)*n rows
-    '''
-
-    n = len(data[0])
-    subset_frac = (data[0][:int(round(n*frac))], data[1][:int(round(n*frac))])
-
-    return subset_frac
-
-
-def get_attr(results, group, attr):
-    import numpy
-
-    n_results = len(results)
-    attrs = [results['monitors'][i][group][attr][-1] for i in range(n_results)]
-
-    return numpy.asarray(attrs)
-
-
-def test_dataset_size(best_config, train, valid, test, targets, n_features, n_targets,
+def _test_dataset_size(best_config, train, valid, test, targets, n_features, n_targets,
         subset_fractions):
     '''Train nets with best configuration and varying dataset sizes
 
@@ -775,6 +461,26 @@ def test_dataset_size(best_config, train, valid, test, targets, n_features, n_ta
         matrices are generated from the most optimal dataset size network
         configuration.
     '''
+
+    def _truncate_data(data, frac):
+        '''Reduce data rows to `frac` of original
+
+        Args
+        ----
+        data: Tuple containing numpy array of feature data and labels
+        frac: percetange of original data to return
+
+        Returns
+        -------
+        subset_frac: pandas.DataFrame
+            Slice of original dataframe with len(data)*n rows
+        '''
+
+        n = len(data[0])
+        subset_frac = (data[0][:int(round(n*frac))], data[1][:int(round(n*frac))])
+
+        return subset_frac
+
     import numpy
     import pandas
     import time
@@ -791,9 +497,10 @@ def test_dataset_size(best_config, train, valid, test, targets, n_features, n_ta
     for i in range(len(subset_fractions)):
 
         # Trim data sets to `frac` of original
-        train_frac = truncate_data(train, subset_fractions[i])
-        #valid_frac = truncate_data(valid, subset_fractions[i])
-        #test_frac  = truncate_data(test, subset_fractions[i])
+        train_frac = _truncate_data(train, subset_fractions[i])
+
+        #valid_frac = _truncate_data(valid, subset_fractions[i])
+        #test_frac  = _truncate_data(test, subset_fractions[i])
         valid_frac = valid
         test_frac = test
 
@@ -824,6 +531,212 @@ def test_dataset_size(best_config, train, valid, test, targets, n_features, n_ta
 
     return results_dataset, test_accuracy, cms
 
+
+def run(file_cfg_paths, path_cfg_ann, debug=False, plots=False):
+    '''
+    Compile subglide data, tune network architecture and test dataset size
+
+    Args
+    ----
+    file_cfg_paths: str
+        Full path to `cfg_paths.yaml` file
+    path_cfg_ann: str
+        Full path to `cfg_ann.yaml` file
+    debug: bool
+        Swith for running single network configuration
+    plots: bool
+        Switch for generating diagnostic plots after each network training
+
+    Returns
+    -------
+    cfg: dict
+        Dictionary of network configuration parameters used
+    data: tuple
+        Tuple collecting training, validation, and test sets. Also includes bin
+        deliniation values
+    results: tuple
+        Tuple collecting results dataframes and confusion matrices
+
+    Note
+    ----
+    The validation set is split into `validation` and `test` sets, the
+    first used for initial comparisons of various net configuration
+    accuracies and the second for a clean test set to get an true accuracy,
+    as reusing the `validation` set can cause the routine to overfit to the
+    validation set.
+    '''
+
+    # TODO add starttime, finishtime, git/versions
+
+    from collections import OrderedDict
+    import climate
+    import datetime
+    import numpy
+    import os
+    import pickle
+    import theano
+
+    import utils_smartmove
+    import yamlord
+
+    # Environment settings - logging, Theano, load configuration, set paths
+    #---------------------------------------------------------------------------
+    climate.enable_default_logging()
+    theano.config.compute_test_value = 'ignore'
+
+    # Configuration settings
+    cfg = yamlord.read_yaml(path_cfg_ann)
+    if debug is True:
+        for key in cfg['net_tuning'].keys():
+            cfg['net_tuning'][key] = [cfg['net_tuning'][key][0],]
+
+    # Define output directory and create if does not exist
+    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    cfg['output']['results_path'] = 'theanets_{}'.format(now)
+
+    # Define paths
+    paths = yamlord.read_yaml(file_cfg_paths)
+
+    path_root       = paths['root']
+    path_acc        = paths['acc']
+    glide_path      = paths['glide']
+    path_ann        = paths['ann']
+    path_csv        = paths['csv']
+    fname_field     = 'field_experiments.p'
+    fname_sgls      = 'data_sgls.p'
+    fname_mask_sgls = 'mask_sgls_filt.p'
+    fname_ann_sgls  = 'sgls_all.p'
+    fname_ind_train = 'ind_train.p'
+    fname_ind_valid = 'ind_valid.p'
+    fname_ind_test  = 'ind_test.p'
+
+    fname_tune_cms  = 'tune_cms.p'
+    fname_data_cms  = 'data_cms.p'
+
+    # Print input data configuration
+    _print_dict_values(cfg['data'])
+
+    # Generate experiments/isotope pandas from csv
+    import utils_smartmove
+    field, isotope = utils_smartmove.make_field_isotope()
+
+    # Compile, split, and normalize data
+    #---------------------------------------------------------------------------
+    sgl_cols = cfg['data']['sgl_cols'] + cfg['net_all']['features']
+
+    # Compile output from glides into single input dataframe
+    _, sgls, _ = utils_smartmove.create_ann_inputs(path_root,
+                                              path_acc,
+                                              glide_path,
+                                              path_ann,
+                                              path_csv,
+                                              fname_field,
+                                              fname_sgls,
+                                              fname_mask_sgls,
+                                              sgl_cols,
+                                              manual_selection=True)
+
+    # Create output directory if it does not exist
+    out_path = os.path.join(path_root, path_ann, cfg['output']['results_path'])
+    os.makedirs(out_path, exist_ok=True)
+
+    # Save sgls data to output directory
+    sgls.to_pickle(os.path.join(out_path, fname_ann_sgls))
+
+    # Drop rows missing data
+    sgls = sgls.dropna()
+
+    print('\nSplit and normalize input/output data')
+    features   = cfg['net_all']['features']
+    target     = cfg['net_all']['target']
+    n_targets  = cfg['net_all']['n_targets']
+    valid_frac = cfg['net_all']['valid_frac']
+
+    # Normalize input (features) and output (target)
+    nsgls, bins = _normalize_data(sgls, features, target, n_targets)
+    bins_list = [float(b) for b in bins]
+
+    # Get indices of train, validation and test datasets
+    ind_train, ind_valid, ind_test = _split_indices(nsgls, valid_frac)
+
+    # Split dataframes into train, validation and test  (features, targets) tuples
+    train, valid, test = _create_datasets(nsgls, ind_train, ind_valid, ind_test,
+                                         features, target)
+
+    # Save information on input data to config
+    cfg['net_all']['n_train'] = len(train[0])
+    cfg['net_all']['n_valid'] = len(valid[0])
+    cfg['net_all']['n_test']  = len(test[0])
+    cfg['net_all']['targets'] = bins_list
+
+
+    # Tuning - find optimal network architecture
+    #---------------------------------------------------------------------------
+    print('\nTune netork configuration')
+
+    # Get all dict of all configuration permutations of params in `tune_params`
+    configs = _get_configs(cfg['net_tuning'])
+
+    # Cycle through configurations storing configuration, net in `results_tune`
+    n_features = len(cfg['net_all']['features'])
+    n_targets = cfg['net_all']['n_targets']
+
+    print('\nNumber of features: {}'.format(n_features))
+    print('Number of targets: {}\n'.format(n_targets))
+
+    results_tune, tune_accuracy, tune_cms = _tune_net(train,
+                                                     valid,
+                                                     test,
+                                                     bins,
+                                                     configs,
+                                                     n_features,
+                                                     n_targets,
+                                                     plots)
+
+    # Get neural net configuration with best accuracy
+    best_config = get_best(results_tune, 'config')
+
+
+    # Test effect of dataset size
+    #---------------------------------------------------------------------------
+    print('\nRun percentage of datasize tests')
+
+    # Get randomly sorted and subsetted datasets to test effect of dataset_size
+    # i.e. - a dataset with the first `subset_fraction` of samples.
+    subset_fractions = cfg['net_dataset_size']['subset_fractions']
+    results_dataset, data_accuracy, data_cms = _test_dataset_size(best_config,
+                                                                 train,
+                                                                 valid,
+                                                                 test,
+                                                                 bins,
+                                                                 n_features,
+                                                                 n_targets,
+                                                                 subset_fractions)
+
+    print('\nTest data accuracy (Configuration tuning): {}'.format(tune_accuracy))
+    print('Test data accuracy (Datasize test):        {}'.format(data_accuracy))
+
+
+    # Save results and configuration to output directory
+    #---------------------------------------------------------------------------
+
+    # Save config as a `*.yaml` file to the output directory
+    yamlord.write_yaml(cfg, os.path.join(out_path, path_cfg_ann))
+
+    # Save output data to analysis output directory
+    results_tune.to_pickle(os.path.join(out_path, cfg['output']['tune_fname']))
+    results_dataset.to_pickle(os.path.join(out_path, cfg['output']['dataset_size_fname']))
+
+    # Save train, validation, test datasets
+    pickle.dump(train, open(os.path.join(out_path, fname_ind_train), 'wb'))
+    pickle.dump(valid, open(os.path.join(out_path, fname_ind_valid), 'wb'))
+    pickle.dump(test, open(os.path.join(out_path, fname_ind_test), 'wb'))
+
+    pickle.dump(tune_cms, open(os.path.join(out_path, fname_tune_cms), 'wb'))
+    pickle.dump(data_sms, open(os.path.join(out_path, fname_data_cms), 'wb'))
+
+    return cfg, (train, valid, test, bins), (results_tune, results_dataset,
+                                             tune_cms, data_cms)
 
 if __name__ == '__main__':
     #cfg, results_tune, results_dataset = run()

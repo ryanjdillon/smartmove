@@ -57,19 +57,19 @@ J:
 # TODO put all masks into `acc_masks` dataframe for simplicity
 # TODO move unessecary plotting to own routine for switching on/off
 
-import os
-import click
-
-@click.command(help='Calculate dive statistics for body condition predictions')
-
-@click.option('--path-project', prompt=True, default='./cfg_paths.yaml',
-              help='Path to cfg_paths.yaml')
-
-@click.option('--debug', prompt=True, default=False, type=bool,
-              help='Return on debug output')
-
-@click.option('--plots', prompt=True, default=True, type=bool,
-              help='Plot diagnostic plots')
+#import os
+#import click
+#
+#@click.command(help='Calculate dive statistics for body condition predictions')
+#
+#@click.option('--path-project', prompt=True, default='./cfg_paths.yaml',
+#              help='Path to cfg_paths.yaml')
+#
+#@click.option('--debug', prompt=True, default=False, type=bool,
+#              help='Return on debug output')
+#
+#@click.option('--plots', prompt=True, default=True, type=bool,
+#              help='Plot diagnostic plots')
 
 def run_all(path_project, debug=False, plots=True):
     import yamlord
@@ -132,12 +132,12 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     from collections import OrderedDict
     import numpy
     import os
-
     import yamlord
-    import utils
-    import utils_lleo
     import pyotelem.plot
     import pyotelem.glides
+
+    from .. import utils
+    from . import utils_lleo
 
     # Input filenames
     fname_cal = 'cal.yaml'
@@ -167,9 +167,9 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     fname_mask_sgls_filt      = 'mask_sgls_filt.p'
 
     # Setup configuration files
-    cfg_glide = cfg_glide_params()
-    cfg_sgl   = cfg_sgl_params()
-    cfg_filt  = cfg_filt_params()
+    cfg_glide = _cfg_glide_params()
+    cfg_sgl   = _cfg_sgl_params()
+    cfg_filt  = _cfg_filt_params()
 
     # Output paths
     ignore = ['nperseg', 'peak_thresh', 'alpha', 'min_depth', 't_max, t_max']
@@ -183,8 +183,14 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     sensors, dt_a, fs_a = utils_lleo.load_lleo(path_data_acc, file_cal_acc,
                                     file_cal_speed, min_depth=2)
 
+    # Plot speed if debug is on
+    if debug:
+        exp_ind = range(len(sensors))
+        utils_plot.plot_swim_speed(exp_ind, sensors['speed'].values)
+
+
     # Signal process data, calculate derived data and find stroke freqencies
-    cfg_glide, sensors, dives, masks, exp_ind = process_sensor_data(log,
+    cfg_glide, sensors, dives, masks, exp_ind = _process_sensor_data(log,
                                                            path_exp,
                                                            cfg_glide,
                                                            file_cfg_exp,
@@ -203,7 +209,7 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     # Find Glides
     #------------
     # Find glides
-    GL, masks['glides'], glide_ratio = process_glides(log,
+    GL, masks['glides'], glide_ratio = _process_glides(log,
                                                       cfg_glide,
                                                       sensors,
                                                       fs_a,
@@ -223,14 +229,14 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
 
     # Save glide analysis configuration
     path_cfg_yaml = os.path.join(out_glide, fname_cfg_glide)
-    save_config(cfg_glide, path_cfg_yaml, 'glides')
+    _save_config(cfg_glide, path_cfg_yaml, 'glides')
 
 
     # SPLIT GLIDES
     #-------------
 
     # Split into subglides, generate summary tables
-    sgls, masks['sgls'] = process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives)
+    sgls, masks['sgls'] = _process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives)
 
     # Save subglide dataframe
     dname_sgl   = utils.cat_keyvalues(cfg_sgl, ignore)
@@ -242,7 +248,7 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     masks['sgls'].to_pickle(os.path.join(out_sgl, fname_mask_sensors_sgls))
 
     # Save subglide analysis configuation
-    save_config(cfg_sgl, os.path.join(out_sgl, fname_cfg_sgl), 'sgls')
+    _save_config(cfg_sgl, os.path.join(out_sgl, fname_cfg_sgl), 'sgls')
 
 
     # TODO move to glide utils?
@@ -293,12 +299,12 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     cfg_all['glide']  = cfg_glide
     cfg_all['sgl']    = cfg_sgl
     cfg_all['filter'] = cfg_filt
-    save_config(cfg_all, os.path.join(out_filt, fname_cfg_filt))
+    _save_config(cfg_all, os.path.join(out_filt, fname_cfg_filt))
 
     return cfg_filt, sensors, sgls, dives, glide_ratio
 
 
-def process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
+def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
         Mw=None, plots=True, debug=False):
     '''Calculate body conditions summary statistics'''
     from collections import OrderedDict
@@ -492,7 +498,7 @@ def process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
     nearest_key, nearest_idx, min_dist = find_nearest_station(lon, lat, transects)
 
     # Cacluate mean salinity above 18m
-    mean_sal = calc_mean_salinity(transects, nearest_key, nearest_idx, max_depth):
+    mean_sal = calc_mean_salinity(transects, nearest_key, nearest_idx, max_depth)
 
     salinities = numpy.asarray([mean_salinity]*len(sensors))
     sensors['dsw'] = pyotelem.seawater.sw_dens0(salinities, sensors['temperature'].values)
@@ -546,7 +552,7 @@ def process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
     return cfg_glide, sensors, dives, masks, exp_ind
 
 
-def process_glides(log, cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=True,
+def _process_glides(log, cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=True,
         debug= False):
     import numpy
 
@@ -587,7 +593,7 @@ def process_glides(log, cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=T
     return GL, glide_mask, glide_ratio
 
 
-def process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives):
+def _process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives):
     '''Split subglides and generate summary dataframe'''
     import numpy
 
@@ -619,7 +625,7 @@ def process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives):
     return sgls, data_sgl_mask
 
 
-def save_config(cfg_add, path_cfg_yaml, name='parameters'):
+def _save_config(cfg_add, path_cfg_yaml, name='parameters'):
     '''Load analysis configuration defualts'''
     from collections import OrderedDict
     import datetime
@@ -645,7 +651,7 @@ def save_config(cfg_add, path_cfg_yaml, name='parameters'):
     return cfg
 
 
-def cfg_glide_params():
+def _cfg_glide_params():
     '''Add fields for glide analysis to config dictionary'''
     from collections import OrderedDict
     import numpy
@@ -687,7 +693,7 @@ def cfg_glide_params():
     return cfg_glide
 
 
-def cfg_sgl_params():
+def _cfg_sgl_params():
     '''Add fields for subglide analysis to config dictionary'''
     from collections import OrderedDict
 
@@ -703,7 +709,7 @@ def cfg_sgl_params():
     return cfg_sgl
 
 
-def cfg_filt_params():
+def _cfg_filt_params():
     '''Add fields for filtering of subglides to config dictionary'''
     from collections import OrderedDict
 

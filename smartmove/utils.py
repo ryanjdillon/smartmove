@@ -1,106 +1,4 @@
 
-def create_project(path_project):
-    """Generate project based on values in *d*."""
-    from collections import OrderedDict
-    import datetime
-    import importlib
-    import os
-    import shutil
-    import yamlord
-
-    import utils
-
-    # Get path to pylleo requirements file
-    module = importlib.util.find_spec('smartmove')
-    module_path  = os.path.split(module.origin)[0]
-
-    fname_cfg_project = 'cfg_project.yaml'
-    fname_cfg_exp = 'cfg_experiments.yaml'
-    fname_cfg_ann = 'cfg_ann.yaml'
-    for fname in [fname_cfg_project, fname_cfg_exp, fname_cfg_ann]:
-        src = os.path.join(module_path, 'templates', fname)
-        dst = os.path.join(path_project, fname)
-        shutil.copyfile(src, dst)
-
-    d = yamlord.read_yaml(os.path.join(path_project, fname_cfg_project))
-
-    d['meta'] = OrderedDict()
-    d.move_to_end('meta', last=False)
-    d['meta']['created'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    d['meta']['versions'] = utils.get_versions('smartmove')
-
-    yamlord.write_yaml(d, os.path.join(path_project, fname_cfg_project))
-
-    # Create paths if not existing
-    for key in d['paths'].keys():
-        p = os.path.join(path_project, d['paths'][key])
-        if not os.path.isdir(p):
-            os.makedirs(p, exist_ok=True)
-
-    print('\nYour project directory has been created at {}.\n'
-          'You must now copy your datalogger data to the `{}` directory, '
-          'the body condition `.csv` files to the `{}` directory, and the CTD '
-          '`.mat` file to the `{}` directory'.format(path_project,
-                                                     d['paths']['acc'],
-                                                     d['paths']['csv'],
-                                                     d['paths']['ctd']))
-
-    return None
-
-
-#def _check_path(path):
-#    '''Check that a path exists or can be created'''
-#    import os
-#
-#    if os.path.exists(path):
-#        #the file is there
-#        path_valid = True
-#    elif os.access(os.path.dirname(path), os.W_OK):
-#        #the file does not exists but write privileges are given
-#        path_valid = True
-#    else:
-#        #can not write there
-#        path_valid = False
-#
-#    return path_valid
-#
-#
-#def input_path(msg, check_current=True):
-#    import os
-#    import sys
-#
-#    path_valid = False
-#    ans_valid  = False
-#    print()
-#    print(msg)
-#    try:
-#        while ans_valid is False:
-#            if check_current == True:
-#                m = ('Use current <{}>?\n'
-#                     'Enter `y` or `n`: '.format(os.path.abspath('.')))
-#                ans = (input(m)).lower()
-#            else:
-#                ans = 'n'
-#
-#            if ans == 'y':
-#                ans_valid = True
-#                path = os.path.abspath('.')
-#            elif ans == 'n':
-#                ans_valid = True
-#                while path_valid is False:
-#                    path = input('Enter a new path: ')
-#                    path_valid = _check_path(path)
-#            else:
-#                ans_valid = False
-#                print('Please enter `y` or `n`.')
-#                continue
-#
-#    except KeyboardInterrupt:
-#        return sys.exit()
-#
-#    return path
-
-
 def mask_from_noncontiguous_indices(n, start_ind, stop_ind):
     '''Create boolean mask from start stop indices of noncontiguous regions
 
@@ -165,19 +63,18 @@ def get_versions(module_name):
     module_path  = os.path.split(module.origin)[0]
     requirements = os.path.join(module_path, 'requirements.txt')
 
-    # Add git hash for pylleo to dict
+    # Add git hash for module to dict
     cwd = os.getcwd()
     os.chdir(module_path)
-    versions[module_name] = get_githash('long')
+    try:
+        versions[module_name] = get_githash('long')
+    except:
+        versions[module_name] = module.__version__
+
     os.chdir(cwd)
 
-    # Add packages and versions to dictionary
-    with open(requirements) as f:
-        for l in f.readlines():
-            package, version = l.strip().split('==')
-            versions[package] = version
-
     return versions
+
 
 def get_githash(hash_type):
     '''Add git commit for reference to code that produced data

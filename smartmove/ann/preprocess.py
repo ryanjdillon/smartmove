@@ -111,7 +111,7 @@ def calc_mod_density(mass_kg, dens_kgm3, n_blocks, block_type):
 
     # Raise error if incorrect `block_type` passed
     else:
-        raise KeyError("`block_type` must be 'weight', 'float', or 'neutral'"
+        raise KeyError("`block_type` must be 'weight', 'float', or 'neutral'")
 
     return total_dens
 
@@ -205,7 +205,7 @@ def make_field_isotope():
     path_field = os.path.join(path_root, path_csv, fname_field_csv)
     path_isotope = os.path.join(path_root, path_csv, fname_isotope_csv)
 
-    field  field, isotope = add_bodydensity_to_experiments(path_field, path_isotope)
+    field, isotope = add_bodydensity_to_experiments(path_field, path_isotope)
 
     field.to_pickle(os.path.join(path_root, path_csv, fname_field_p))
     isotope.to_pickle(os.path.join(path_root, path_csv, fname_isotope_p))

@@ -362,7 +362,3 @@ def plot_neural_net(ax, left, right, bottom, top, layer_sizes):
                 ax.add_artist(line)
 
     return None
-
-
-if __name__ == '__main__':
-
