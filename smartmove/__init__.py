@@ -14,7 +14,7 @@ def create_project(path_project):
 
     # Get path to pylleo requirements file
     module = importlib.util.find_spec('smartmove')
-    module_path  = os.path.split(module.origin)[0]
+    module_path = os.path.split(module.origin)[0]
 
     fname_cfg_project = 'cfg_project.yml'
     fname_cfg_exp = 'cfg_experiments.yml'
@@ -25,6 +25,8 @@ def create_project(path_project):
         shutil.copyfile(src, dst)
 
     d = yamlord.read_yaml(os.path.join(path_project, fname_cfg_project))
+    d['paths']['project'] = os.path.abspath(path_project)
+    d['paths'].move_to_end('project', last=False)
 
     d['meta'] = OrderedDict()
     d.move_to_end('meta', last=False)

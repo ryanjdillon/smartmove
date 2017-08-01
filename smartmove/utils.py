@@ -294,9 +294,8 @@ def filter_sgls(n_samples, exp_ind, sgls, max_pitch, min_depth,
     stop_ind  = sgls[mask_sgls]['stop_idx'].values
 
     # Create mask for all data from valid start/stop indices
-    mask_data_sgl = pyotelem.utils.mask_from_noncontiguous_indices(n_samples,
-                                                          start_ind,
-                                                          stop_ind)
+    mask_data_sgl = mask_from_noncontiguous_indices(n_samples, start_ind,
+                                                               stop_ind)
     # Catch error with no matching subglides
     num_valid_sgls = len(numpy.where(mask_sgls)[0])
     if num_valid_sgls == 0:

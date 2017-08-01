@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 '''
 Body density estimation. Japan workshop May 2016
 
@@ -57,44 +55,30 @@ J:
 # TODO put all masks into `acc_masks` dataframe for simplicity
 # TODO move unessecary plotting to own routine for switching on/off
 
-#import os
-#import click
-#
-#@click.command(help='Calculate dive statistics for body condition predictions')
-#
-#@click.option('--path-project', prompt=True, default='./cfg_paths.yml',
-#              help='Path to cfg_paths.yml')
-#
-#@click.option('--debug', prompt=True, default=False, type=bool,
-#              help='Return on debug output')
-#
-#@click.option('--plots', prompt=True, default=True, type=bool,
-#              help='Plot diagnostic plots')
-
-def run_all(path_project, debug=False, plots=True):
+def run_all(cfg_project, debug=False, plots=True):
+    import os
+    import pyotelem
     import yamlord
-    import utils
 
-    cfg_project = yamlord.read_yaml(path_project, 'cfg_project.yml')
-    cfg_paths   = cfg_project['paths']
-    cfg_cal   = cfg_project['cal']
+    from .. import utils
 
-    path_acc   = cfg_paths['acc']
-    path_glide = cfg_paths['glide']
+
+    paths   = cfg_project['paths']
+    fnames  = cfg_project['fnames']
 
     # Generate list of paths in acc data directory
     path_exps = list()
-    for path_exp in os.listdir(os.path.join(path_project, path_acc)):
+    for path_exp in os.listdir(os.path.join(paths['project'], paths['acc'])):
 
         # Only process directories
-        if os.path.isdir(os.path.join(path_project, path_acc, path_exp)):
+        if os.path.isdir(os.path.join(paths['project'], paths['acc'], path_exp)):
 
             path_exps.append(path_exp)
 
     # Get user selection of acc paths to process
     path_exps = sorted(path_exps)
     msg = 'Enter paths numbers to process:\n'
-    process_ind = utils.get_dir_indices(msg, path_exps)
+    process_ind = pyotelem.utils.get_dir_indices(msg, path_exps)
 
     # Process selected acc experiments
     for i in process_ind:
@@ -105,66 +89,67 @@ def run_all(path_project, debug=False, plots=True):
         tag_id = int(path_exp.split('_')[2])
         year   = int(path_exp[:4])
         month  = int(path_exp[4:6])
-        path_cal_acc = cfg_cal[model][tag_id][year][month]
+        path_cal_acc = cfg_project['cal'][tag_model][tag_id][year][month]
 
-        print('Tag calibration file path: {}'.format(path_cal_acc))
+        print('Tag calibration file path: {}\n'.format(path_cal_acc))
 
         # Currently creating a new configuration for each exp
         path_cfg_glide = path_exp
 
-        print('Processing: {}'.format(path_exp))
+        print('Processing: {}\n'.format(path_exp))
 
         # Run glide analysis
-        cfg_glide, sensors, sgls, dives, glide_ratio = lleo_glide_analysis(path_project,
-                                                                  path_acc,
-                                                                  path_glide,
-                                                                  path_exp,
-                                                                  path_cal_acc,
-                                                                  plots=plots,
-                                                                  debug=debug)
+        cfg_glide, sensors, sgls, dives, glide_ratio = lleo_glide_analysis(cfg_project,
+                                                                           path_exp,
+                                                                           path_cal_acc,
+                                                                           plots=plots,
+                                                                           debug=debug)
     return cfg_glide, sensors, sgls, dives, glide_ratio
 
 
 
-def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
-        path_cal_acc, plots=True, debug=False):
+def lleo_glide_analysis(cfg_project, path_exp, path_cal_acc, plots=True, debug=False):
     '''Run glide analysis with little leonarda data'''
     from collections import OrderedDict
     import numpy
     import os
     import yamlord
-    import pyotelem.plot
+    from pyotelem.plots import plotdynamics, plotglides
     import pyotelem.glides
 
     from .. import utils
     from . import utils_lleo
 
+    paths = cfg_project['paths']
+    fnames = cfg_project['fnames']
+
     # Input filenames
-    fname_cal = 'cal.yml'
-    fname_cal_speed = 'speed_calibrations.csv'
+    fname_cal = fnames['tag']['cal']
+    fname_cal_speed = fnames['tag']['cal_speed']
 
     # Input paths
-    path_data_acc  = os.path.join(path_project, path_acc, path_exp)
-    file_cal_acc   = os.path.join(path_project, path_acc, path_cal_acc, fname_cal)
-    file_cal_speed = os.path.join(path_project, path_acc, fname_cal_speed)
-    # TODO review this implemenation later
-    file_cfg_exp   = './cfg_experiments.yml'
+    path_data_acc  = os.path.join(paths['project'], paths['acc'], path_exp)
+    file_cal_acc   = os.path.join(paths['project'], paths['acc'], path_cal_acc, fname_cal)
+    file_cal_speed = os.path.join(paths['project'], paths['acc'], fname_cal_speed)
 
     # Output filenames
-    fname_cfg_glide           = 'cfg_glide.yml'
-    fname_cfg_sgl             = 'cfg_sgl.yml'
-    fname_cfg_filt            = 'cfg_filter.yml'
+    fname_cfg_exp = fnames['tag']['cfg_exp']
+    file_cfg_exp  = os.path.join(paths['project'], paths['acc'], fname_cfg_exp)
 
-    fname_sensors             = 'pydata_{}.p'.format(path_exp)
-    fname_dives               = 'data_dives.p'
-    fname_sgls                = 'data_sgls.p'
-    fname_glide_ratio         = 'data_ratios.p'
-    fname_mask_sensors        = 'mask_sensors.p'
-    fname_mask_sensors_glides = 'mask_sensors_glides.p'
-    fname_mask_sensors_sgls   = 'mask_sensors_sgls.p'
-    fname_mask_sensors_filt   = 'mask_sensors_filt.p'
-    fname_mask_sgls           = 'mask_sgls.npy'
-    fname_mask_sgls_filt      = 'mask_sgls_filt.p'
+    fname_cfg_glide = fnames['glide']['cfg_glide']
+    fname_cfg_sgl   = fnames['glide']['cfg_sgl']
+    fname_cfg_filt  = fnames['glide']['cfg_filt']
+
+    fname_sensors             = fnames['tag']['data'].format(path_exp)
+    fname_dives               = fnames['glide']['dives']
+    fname_sgls                = fnames['glide']['sgls']
+    fname_glide_ratio         = fnames['glide']['glide_ratio']
+    fname_mask_sensors        = fnames['glide']['mask_sensors']
+    fname_mask_sensors_glides = fnames['glide']['mask_sensors_glides']
+    fname_mask_sensors_sgls   = fnames['glide']['mask_sensors_sgls']
+    fname_mask_sensors_filt   = fnames['glide']['mask_sensors_filt']
+    fname_mask_sgls           = fnames['glide']['mask_sgls']
+    fname_mask_sgls_filt      = fnames['glide']['mask_sgls_filt']
 
     # Setup configuration files
     cfg_glide = _cfg_glide_params()
@@ -173,24 +158,24 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
 
     # Output paths
     ignore = ['nperseg', 'peak_thresh', 'alpha', 'min_depth', 't_max, t_max']
-    out_data  = os.path.join(path_project, path_acc, path_exp)
+    out_data  = os.path.join(paths['project'], paths['acc'], path_exp)
     os.makedirs(out_data, exist_ok=True)
 
     # LOAD DATA
     #----------
-
     # linearly interpolated sensors to accelerometer sensor
     sensors, dt_a, fs_a = utils_lleo.load_lleo(path_data_acc, file_cal_acc,
-                                    file_cal_speed, min_depth=2)
+                                    file_cal_speed)
 
     # Plot speed if debug is on
     if debug:
         exp_ind = range(len(sensors))
-        utils_plot.plot_swim_speed(exp_ind, sensors['speed'].values)
+        plotdynamics.plot_swim_speed(exp_ind, sensors['speed'].values)
 
 
     # Signal process data, calculate derived data and find stroke freqencies
-    cfg_glide, sensors, dives, masks, exp_ind = _process_sensor_data(log,
+    cfg_glide, sensors, dives, masks, exp_ind = _process_sensor_data(
+                                                           cfg_project,
                                                            path_exp,
                                                            cfg_glide,
                                                            file_cfg_exp,
@@ -204,12 +189,9 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     dives.to_pickle(os.path.join(out_data, fname_dives))
     masks.to_pickle(os.path.join(out_data, fname_mask_sensors))
 
-    # TODO better way to save meta data from data processing? split routine?
-
     # Find Glides
     #------------
-    # Find glides
-    GL, masks['glides'], glide_ratio = _process_glides(log,
+    GL, masks['glides'], glide_ratio = _process_glides(
                                                       cfg_glide,
                                                       sensors,
                                                       fs_a,
@@ -220,7 +202,7 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
 
     # Save glide ratio dataframe
     dname_glide = utils.cat_keyvalues(cfg_glide, ignore)
-    out_glide = os.path.join(path_project, path_glide, path_exp, dname_glide)
+    out_glide = os.path.join(paths['project'], paths['glide'], path_exp, dname_glide)
     os.makedirs(out_glide, exist_ok=True)
     glide_ratio.to_pickle(os.path.join(out_glide, fname_glide_ratio))
 
@@ -234,9 +216,8 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
 
     # SPLIT GLIDES
     #-------------
-
     # Split into subglides, generate summary tables
-    sgls, masks['sgls'] = _process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives)
+    sgls, masks['sgls'] = _process_sgls(cfg_sgl, sensors, fs_a, GL, dives)
 
     # Save subglide dataframe
     dname_sgl   = utils.cat_keyvalues(cfg_sgl, ignore)
@@ -251,13 +232,12 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     _save_config(cfg_sgl, os.path.join(out_sgl, fname_cfg_sgl), 'sgls')
 
 
-    # TODO move to glide utils?
     # FILTER SUBGLIDES
     #-----------------
     # Include duration in filtering if splitting is fast enough?
     # Filter subglides
     exp_ind = numpy.where(masks['exp'])[0]
-    masks['filt_sgls'], sgls['mask'] = pyotelem.glides.filter_sgls(len(sensors),
+    masks['filt_sgls'], sgls['mask'] = utils.filter_sgls(len(sensors),
                                                    exp_ind,
                                                    sgls,
                                                    cfg_filt['pitch_thresh'],
@@ -268,7 +248,7 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
                                                    cfg_filt['max_speed_delta'])
 
     # Plot filtered data
-    pyotelem.plot.plot_sgls(sensors['depth'].values, masks['filt_sgls'], sgls,
+    plotglides.plot_sgls(sensors['depth'].values, masks['filt_sgls'], sgls,
                          sgls['mask'], sensors['p_lf'].values,
                          sensors['r_lf'].values, sensors['h_lf'].values)
 
@@ -279,7 +259,7 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     masks['filt_sgls'].to_pickle(os.path.join(out_filt, fname_mask_sensors_filt))
 
     # Save filtered subglide mask of sgl dataframe
-    # TODO find better solution later only using mask on whole sgls array
+    # TODO remove?
     sgls['mask'].to_pickle(os.path.join(out_filt, fname_mask_sgls_filt))
 
     # Save symlink to data and masks in filter directory
@@ -304,24 +284,23 @@ def lleo_glide_analysis(path_project, path_acc, path_glide, path_exp,
     return cfg_filt, sensors, sgls, dives, glide_ratio
 
 
-def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
+def _process_sensor_data(cfg_project, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
         Mw=None, plots=True, debug=False):
     '''Calculate body conditions summary statistics'''
     from collections import OrderedDict
     import numpy
+    import os
     import pandas
-
-    import utils
-    import pyotelem.dives
-    import pyotelem.glides
-    import pyotelem.plot
-    import pyotelem.prh
-    import pyotelem.seawater
-    import pyotelem.signal
-
+    import pyotelem
+    from pyotelem.plots import plotdives, plotdsp
     import yamlord
 
-    # TODO cleanup later
+    from .. import utils
+    from . import utils_ctd
+
+    paths = cfg_project['paths']
+    fnames = cfg_project['fnames']
+
     exp_idxs = [None, None]
     try:
         cfg_exp = yamlord.read_yaml(file_cfg_exp)
@@ -330,19 +309,19 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
 
     # 1 Select indices for analysis
     #--------------------------------------------------------------------------
-    log.new_entry('Select indices for analysis')
+    print('* Select indices for analysis\n')
 
     if path_exp in cfg_exp:
         exp_idxs[0] = cfg_exp[path_exp]['start_idx']
         exp_idxs[1] = cfg_exp[path_exp]['stop_idx']
     else:
         # Plot accelerometer axes, depths, and propeller speed
-        pyotelem.plot.plot_triaxial_depths_speed(sensors)
+        plotdives.plot_triaxial_depths_speed(sensors)
 
         # Get indices user input - mask
-        exp_idxs[0] = utils.recursive_input('Analysis start index', int)
-        exp_idxs[1] = utils.recursive_input('Analysis stop index', int)
-        # TODO cleanup later
+        exp_idxs[0] = pyotelem.utils.recursive_input('Analysis start index', int)
+        exp_idxs[1] = pyotelem.utils.recursive_input('Analysis stop index', int)
+
         cfg_exp[path_exp] = OrderedDict()
         cfg_exp[path_exp]['start_idx'] = exp_idxs[0]
         cfg_exp[path_exp]['stop_idx']  = exp_idxs[1]
@@ -361,27 +340,27 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
 
     # 1.3 Calculate pitch, roll, and heading
     #--------------------------------------------------------------------------
-    log.new_entry('Calculate pitch, roll, heading')
-    sensors['p'], sensors['r'], sensors['h'] = pyotelem.prh.calc_PRH(sensors['Ax_g'].values,
+    print('* Calculate pitch, roll, heading\n')
+    sensors['p'], sensors['r'], sensors['h'] = pyotelem.dynamics.prh(sensors['Ax_g'].values,
                                                          sensors['Ay_g'].values,
                                                          sensors['Az_g'].values)
 
     # 2 Define dives
     #--------------------------------------------------------------------------
     # TODO use min_dive_depth and min_analysis_depth?
-    log.new_entry('Define dives')
+    print('* Define dives\n')
     dives, masks['dive'] = pyotelem.dives.finddives2(sensors['depth'].values,
                                                   cfg_glide['min_depth'])
 
 
     # 3.2.1 Determine `stroke_frq` fluking rate and cut-off frequency
     #--------------------------------------------------------------------------
-    log.new_entry('Get stroke frequency')
+    print('* Get stroke frequency\n')
     # calculate power spectrum of the accelerometer data at the whale frame
     Ax_g = sensors['Ax_g'][masks['exp']].values
     Az_g = sensors['Az_g'][masks['exp']].values
 
-    # NOTE change `auto_select` & `stroke_ratio` here to modify selectio method
+    # NOTE change `stroke_ratio` here to modify selectio method
     # TODO should perform initial lp/hp filter, then `stroke_f` comes from high-pass
     # should be OK other than t_max, these values are too high
     if debug is False:
@@ -390,7 +369,6 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
                                                        fs_a,
                                                        cfg_glide['nperseg'],
                                                        cfg_glide['peak_thresh'],
-                                                       auto_select=False,
                                                        stroke_ratio=None)
         # Store user input cutoff and stroke frequencies
         cfg_glide['cutoff_frq']   = cutoff_frq
@@ -406,105 +384,83 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
 
     # 3.2.2 Separate low and high frequency signals
     #--------------------------------------------------------------------------
-    log.new_entry('Separate accelerometry to high and low-pass signals')
+    print('* Separate accelerometry to high and low-pass signals\n')
     order = 5
     cutoff_str = str(cfg_glide['cutoff_frq'])
     for btype, suffix in zip(['low', 'high'], ['lf', 'hf']):
-        b, a, = pyotelem.signal.butter_filter(cfg_glide['cutoff_frq'], fs_a, order=order,
+        b, a, = pyotelem.dsp.butter_filter(cfg_glide['cutoff_frq'], fs_a, order=order,
                 btype=btype)
         for param in ['Ax_g', 'Ay_g', 'Az_g']:
             key = '{}_{}_{}'.format(param, suffix, cutoff_str)
-            sensors[key] = pyotelem.signal.butter_apply(b, a, sensors[param].values)
+            sensors[key] = pyotelem.dsp.butter_apply(b, a, sensors[param].values)
 
-    # TODO set params for lf/hf to reduce clutter throughout this routine
-    # TODO combine to single plot with shared axes
+    # Plot low and high freqency accelerometer signals
     if plots is True:
-        pyotelem.plot.plot_lf_hf(sensors['Ax_g'][masks['exp']],
-                              sensors['Ax_g_lf_'+cutoff_str][masks['exp']],
-                              sensors['Ax_g_hf_'+cutoff_str][masks['exp']],
-                              title='x axis')
+        plotdsp.plot_lf_hf(sensors['Ax_g'][masks['exp']],
+                           sensors['Ax_g_lf_'+cutoff_str][masks['exp']],
+                           sensors['Ax_g_hf_'+cutoff_str][masks['exp']],
+                           title='x axis')
 
-        pyotelem.plot.plot_lf_hf(sensors['Ay_g'][masks['exp']],
-                              sensors['Ay_g_lf_'+cutoff_str][masks['exp']],
-                              sensors['Ay_g_hf_'+cutoff_str][masks['exp']],
-                              title='y axis')
+        plotdsp.plot_lf_hf(sensors['Ay_g'][masks['exp']],
+                           sensors['Ay_g_lf_'+cutoff_str][masks['exp']],
+                           sensors['Ay_g_hf_'+cutoff_str][masks['exp']],
+                           title='y axis')
 
-        pyotelem.plot.plot_lf_hf(sensors['Az_g'][masks['exp']],
-                              sensors['Az_g_lf_'+cutoff_str][masks['exp']],
-                              sensors['Az_g_hf_'+cutoff_str][masks['exp']],
-                              title='z axis')
+        plotdsp.plot_lf_hf(sensors['Az_g'][masks['exp']],
+                           sensors['Az_g_lf_'+cutoff_str][masks['exp']],
+                           sensors['Az_g_hf_'+cutoff_str][masks['exp']],
+                           title='z axis')
 
 
     # 3.2.3 Calculate the smooth pitch from the low pass filter acceleration
     #       signal to avoid incorporating signals above the stroking periods
     #--------------------------------------------------------------------------
-    log.new_entry('Calculate low-pass pitch, roll, heading')
-    prh_lf = pyotelem.prh.calc_PRH(sensors['Ax_g_lf_'+cutoff_str].values,
-                                sensors['Ay_g_lf_'+cutoff_str].values,
-                                sensors['Az_g_lf_'+cutoff_str].values,)
+    print('* Calculate low-pass pitch, roll, heading\n')
+    prh_lf = pyotelem.dynamics.prh(sensors['Ax_g_lf_'+cutoff_str].values,
+                                   sensors['Ay_g_lf_'+cutoff_str].values,
+                                   sensors['Az_g_lf_'+cutoff_str].values,)
 
     sensors['p_lf'], sensors['r_lf'], sensors['h_lf'] = prh_lf
 
 
     # 4 Define precise descent and ascent phases
     #--------------------------------------------------------------------------
-    log.new_entry('Get precise indices of descents, ascents, phase and bottom')
+    print('* Get precise indices of descents, ascents, phase and bottom\n')
     masks['des'], masks['asc'] = pyotelem.dives.get_des_asc2(sensors['depth'].values,
                                                   masks['dive'].values,
                                                   sensors['p_lf'].values,
                                                   cfg_glide['cutoff_frq'],
                                                   fs_a,
                                                   order=5)
-
-    # Typecast des/asc columns to `bool` TODO better solution  later
+    # Typecast des/asc columns to `bool`
     masks = masks.astype(bool)
-
     if plots is True:
-        pyotelem.plot.plot_dives_pitch(sensors['depth'][masks['exp']],
-                                    masks['dive'][masks['exp']],
-                                    masks['des'][masks['exp']],
-                                    masks['asc'][masks['exp']],
-                                    sensors['p'][masks['exp']],
-                                    sensors['p_lf'][masks['exp']])
-
-
-    # 5 Estimate swim speed
-    #--------------------------------------------------------------------------
-
-
+        plotdives.plot_dives_pitch(sensors['depth'][masks['exp']],
+                                   masks['dive'][masks['exp']],
+                                   masks['des'][masks['exp']],
+                                   masks['asc'][masks['exp']],
+                                   sensors['p'][masks['exp']],
+                                   sensors['p_lf'][masks['exp']])
 
 
     # 8 Estimate seawater density around the tagged animal
     #--------------------------------------------------------------------------
-    log.new_entry('Estimate seawater density')
+    print('* Estimate seawater density\n')
 
+    # Study location and max depth to average salinities
+    lon = cfg_project['experiment']['coords']['lon']
+    lat = cfg_project['experiment']['coords']['lat']
+    lat = cfg_project['experiment']['coords']['lat']
+    max_depth = cfg_project['experiment']['net_depth']
 
-    # TODO put in config
-    # Study location and max depth
-    # 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
-    lat = 69.69941666666666
-    lon = 18.65125
-    max_depth = 18 # meters
+    # Read data
+    fname_ctd = fnames['glide']['ctd']
+    file_ctd_mat = os.path.join(paths['project'], paths['ctd'], fname_ctd)
 
-    import utils_ctd
+    t = sensors['temperature'].values
 
-    ## Read data
-    fname_ctd = 'kaldfjorden2016_inner.mat'
-    file_ctd_mat = os.path.join(paths['project'], path['ctd'], fname_ctd)
-
-    transects = read_matlab(ctd_mat_file)
-
-    # Find nearest station
-    nearest_key, nearest_idx, min_dist = find_nearest_station(lon, lat, transects)
-
-    # Cacluate mean salinity above 18m
-    mean_sal = calc_mean_salinity(transects, nearest_key, nearest_idx, max_depth)
-
-    salinities = numpy.asarray([mean_salinity]*len(sensors))
-    sensors['dsw'] = pyotelem.seawater.sw_dens0(salinities, sensors['temperature'].values)
-
-
-    # TODO split to own routine here
+    sensors['dsw'] = utils_ctd.get_seawater_densities(file_ctd_mat, t, lon, lat,
+                                                      max_depth)
 
     # 6.1 Extract strokes and glides using heave
     #     high-pass filtered (HPF) acceleration signal, axis=3
@@ -519,7 +475,7 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
     #   hpf-x, when detecting glides in the next step use Ahf_Anlf() with axis=0
     #   hpf-z when detecting glides in the next step use Ahf_Anlf() with axis=2
 
-    log.new_entry('Get fluke signal threshold')
+    print('* Get fluke signal threshold\n')
 
     # TODO Need to set J (signal threshold) here, user input should be the
     # power, not the frequency. Just use a standard plot of acceleration here?
@@ -529,8 +485,8 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
         Ax_g_hf = sensors['Ax_g_hf_'+cutoff_str][masks['exp']].values
         Az_g_hf = sensors['Az_g_hf_'+cutoff_str][masks['exp']].values
 
-        f_wx, Sx, Px, dpx = pyotelem.signal.calc_PSD_welch(Ax_g_hf, fs_a, nperseg=512)
-        f_wz, Sz, Pz, dpz = pyotelem.signal.calc_PSD_welch(Az_g_hf, fs_a, nperseg=512)
+        f_wx, Sx, Px, dpx = pyotelem.dsp.calc_PSD_welch(Ax_g_hf, fs_a, nperseg=512)
+        f_wz, Sz, Pz, dpz = pyotelem.dsp.calc_PSD_welch(Az_g_hf, fs_a, nperseg=512)
 
         import matplotlib.pyplot as plt
         fig, (ax1, ax2) = plt.subplots(1, 2)
@@ -545,18 +501,18 @@ def _process_sensor_data(log, path_exp, cfg_glide, file_cfg_exp, sensors, fs_a,
         plt.show()
 
         # Get user selection for J - select one for both axes
-        cfg_glide['J'] = utils.recursive_input('J (fluke magnitude)', float)
+        cfg_glide['J'] = pyotelem.utils.recursive_input('J (fluke magnitude)', float)
     else:
         cfg_glide['J'] = 0.4
 
     return cfg_glide, sensors, dives, masks, exp_ind
 
 
-def _process_glides(log, cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=True,
+def _process_glides(cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=True,
         debug= False):
     import numpy
 
-    import utils
+    from .. import utils
     import pyotelem.glides
 
     cutoff_str = str(cfg_glide['cutoff_frq'])
@@ -580,7 +536,7 @@ def _process_glides(log, cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=
 
     # 10 Calculate glide ratio TODO keep?
     #--------------------------------------------------------------------------
-    log.new_entry('Calculate glide ratio')
+    print('* Calculate glide ratio\n')
     glide_mask = utils.mask_from_noncontiguous_indices(len(sensors), GL[:,0], GL[:,1])
 
     glide_ratio = pyotelem.glides.calc_glide_ratios(dives,
@@ -593,7 +549,7 @@ def _process_glides(log, cfg_glide, sensors, fs_a, dives, masks, Mw=None, plots=
     return GL, glide_mask, glide_ratio
 
 
-def _process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives):
+def _process_sgls(cfg_sgl, sensors, fs_a, GL, dives):
     '''Split subglides and generate summary dataframe'''
     import numpy
 
@@ -601,7 +557,7 @@ def _process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives):
 
     # 7 Make 5sec sub-glides
     #--------------------------------------------------------------------------
-    log.new_entry('Make sub-glides, duration {}'.format(cfg_sgl['dur']))
+    print('* Make sub-glides, duration {}\n'.format(cfg_sgl['dur']))
 
     SGL, data_sgl_mask = pyotelem.glides.split_glides(len(sensors),
                                                    cfg_sgl['dur'], fs_a, GL)
@@ -611,7 +567,7 @@ def _process_sgls(log, cfg_sgl, sensors, fs_a, GL, dives):
     #--------------------------------------------------------------------------
     pitch_lf_deg = numpy.rad2deg(sensors['p_lf'].values)
 
-    log.new_entry('Generate summary information table for subglides')
+    print('* Generate summary information table for subglides\n')
     sgls = pyotelem.glides.calc_glide_des_asc(sensors['depth'].values,
                                            sensors['p_lf'].values,
                                            sensors['r_lf'].values,
@@ -631,7 +587,7 @@ def _save_config(cfg_add, path_cfg_yaml, name='parameters'):
     import datetime
 
     import yamlord
-    import utils
+    from .. import utils
 
     cfg = OrderedDict()
 
@@ -642,7 +598,7 @@ def _save_config(cfg_add, path_cfg_yaml, name='parameters'):
     # Get git hash and versions of dependencies
     # TODO the versions added by this should only be logged in release, or
     # maybe check local installed vs requirements versions
-    cfg['versions'] = utils.get_versions('bodycondition')
+    cfg['versions'] = utils.get_versions('smartmove')
 
     cfg[name] = cfg_add
 

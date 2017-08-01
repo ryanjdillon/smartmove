@@ -1,3 +1,4 @@
+# Paths for use across modules
 paths:
   # Contains datalogger data for each experiment to be analyzed
   acc: data_accelerometer
@@ -13,6 +14,8 @@ paths:
   
   # Path for ANN model input (copied) and output files
   ann: model_ann
+
+# Datalogger calibration directories
 cal:
   # Contains acceleration calibration YAMLs for associated tag ID
   # Sensors should be calibrated per month--closest calibration used for analysis
@@ -25,3 +28,36 @@ cal:
       2016:
         04: 20160418_W190PD3GT_34840_Skinny_2Neutral
   
+# Filenames for use amonst modules
+fnames:
+  # Datalogger data processing
+  tag:
+    cal:       cal.yml
+    cal_speed: speed_calibrations.csv
+    data:      pydata_{}.p
+    cfg_exp:   cfg_experiments.yml 
+
+  # Glide analysis input/output
+  glide:
+    cfg_glide:           cfg_glide.yml
+    cfg_sgl:             cfg_sgl.yml
+    cfg_filt:            cfg_filter.yml
+    dives:               data_dives.p
+    sgls:                data_sgls.p
+    glide_ratio :        data_ratios.p
+    mask_sensors:        mask_sensors.p
+    mask_sensors_glides: mask_sensors_glides.p
+    mask_sensors_sgls:   mask_sensors_sgls.p
+    mask_sensors_filt:   mask_sensors_filt.p
+    # TODO check on this one
+    mask_sgls:           mask_sgls.npy
+    mask_sgls_filt:      mask_sgls_filt.p
+    ctd:                 kaldfjorden2016_inner.mat
+
+# Parameters for field experiment
+experiment:    
+  # 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
+  coords:
+    lon: 18.65125
+    lat: 69.69942
+  net_depth: 18 #meters

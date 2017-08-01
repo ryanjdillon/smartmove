@@ -226,6 +226,24 @@ def plot_transect_data(transects):
     return None
 
 
+def get_seawater_densities(file_ctd_mat, t, lon, lat, max_depth):
+    import gsw
+    import numpy
+
+    transects = read_matlab(file_ctd_mat)
+
+    # Find nearest station
+    nearest_key, nearest_idx, min_dist = find_nearest_station(lon, lat, transects)
+
+    # Cacluate mean salinity above 18m
+    mean_sal = calc_mean_salinity(transects, nearest_key, nearest_idx, max_depth)
+
+    SA = numpy.asarray([mean_sal]*len(t))
+    p = numpy.zeros(len(t))
+
+    return gsw.rho(SA, t, p)
+
+
 if __name__ == '__main__':
     import os
 

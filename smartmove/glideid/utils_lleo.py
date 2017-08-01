@@ -34,8 +34,9 @@ def load_lleo(path_data_acc, file_cal_acc, file_cal_speed):
     cal_dict = yamlord.read_yaml(file_cal_acc)
 
     # Verify sensor ID of data matches ID of CAL
-    if cal_dict['tag_id'] != tag_id:
-        raise SystemError('Data `tag_id` does not match calibration `tag_id`')
+    if cal_dict['tag_id'] != str(tag_id):
+        raise SystemError('Data `tag_id` ({}) does not match calibration '
+                          '`tag_id` ({})'.format(tag_id, cal_dict['tag_id']))
 
     # Load meta data
     meta = lleoio.read_meta(path_data_acc, tag_model, tag_id)
@@ -48,7 +49,7 @@ def load_lleo(path_data_acc, file_cal_acc, file_cal_speed):
     sensors = lleocal.calibrate_acc(sensors, cal_dict)
 
     # Calibrate propeller measurements to speed m/s^2
-    sensors = lleocal.calibrate_propeller(sensors, fil_cal_speed)
+    sensors = lleocal.calibrate_propeller(sensors, file_cal_speed)
 
     # Linearly interpolate data
     sensors.interpolate('linear', inplace=True)
