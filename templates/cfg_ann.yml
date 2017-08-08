@@ -9,16 +9,11 @@ data:
         #- 'SE_speed_vs_time'
     glides:
       cutoff_frq: 0.3
-      #stroke_frq: 0.0625
-      #t_max: 2.5
       J: 0.05
-      #min_depth: 0.4
-      #tmax: 16.0
     sgls:
       dur: 2
     filter:
       pitch_thresh: 30
-      #min_depth: 0.4
       max_depth_delta: 8.0
       min_speed: 0.3
       max_speed: 10
@@ -27,35 +22,16 @@ data:
 # Data and network config common to all structures
 net_all:
     features:
-        #- 'R2_speed_vs_time'
-        #- 'SD_pitch'
-        #- 'SE_speed_vs_time'##
         - 'abs_depth_change'##
-        #- 'dive_duration' 
-        #- 'dive_id'
-        #- 'dive_max_depth'
-        #- 'dive_min_depth'
         - 'dive_phase_int'##
-        #- 'duration'
-        #- 'exp_id'
-        #- 'heading_concentration'
         - 'mean_a' ##
         - 'mean_depth' ##
-        #- 'mean_heading_circ'
         - 'mean_pitch'##
-        #- 'mean_pitch_circ'
-        #- 'mean_roll_circ'
-        #- 'mean_sin_pitch' ##
         - 'mean_speed'
         - 'mean_swdensity'
-        #- 'mean_temp'
-        #- 'pitch_concentration'
-        #- 'roll_concentration'
-        #- 'start_idx'
-        #- 'stop_idx'
         - 'total_depth_change'
         - 'total_speed_change'##
-    target: 'total_dens'
+    target: 'rho_mod'
     valid_frac: 0.6
     n_targets:  10
 
@@ -100,15 +76,3 @@ net_tuning:
         - 10
     learning_rate:
         - 0.0001
-
-# Parameters for testing dataset size
-net_dataset_size:
-    subset_fractions:
-        - 0.4
-        - 0.7
-        - 1.0
-
-# Output paths and filenames
-output:
-    tune_fname: 'results_tuning.p'
-    dataset_size_fname: 'results_dataset_size.p'
