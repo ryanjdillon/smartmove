@@ -19,7 +19,10 @@ def create_project(path_project):
     fname_cfg_project = 'cfg_project.yml'
     fname_cfg_exp = 'cfg_experiments.yml'
     fname_cfg_ann = 'cfg_ann.yml'
-    for fname in [fname_cfg_project, fname_cfg_exp, fname_cfg_ann]:
+    fname_cfg_glide = 'cfg_glide.yml'
+    fname_cfg_filt = 'cfg_sgl-filt.yml'
+    for fname in [fname_cfg_project, fname_cfg_exp, fname_cfg_ann,
+                  fname_cfg_glide, fname_cfg_filt]:
         src = os.path.join(module_path, 'templates', fname)
         dst = os.path.join(path_project, fname)
         shutil.copyfile(src, dst)
@@ -45,7 +48,7 @@ def create_project(path_project):
           'You must now copy your datalogger data to the `{}` directory, '
           'the body condition `.csv` files to the `{}` directory, and the CTD '
           '`.mat` file to the `{}` directory'.format(path_project,
-                                                     d['paths']['acc'],
+                                                     d['paths']['tag'],
                                                      d['paths']['csv'],
                                                      d['paths']['ctd']))
 
