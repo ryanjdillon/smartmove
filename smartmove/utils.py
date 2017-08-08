@@ -99,7 +99,7 @@ def get_githash(hash_type):
     return subprocess.check_output(cmd[hash_type]).decode('ascii').strip()
 
 
-def create_symlink(src, dest):
+def symlink(src, dest):
     '''Failsafe creation of symlink if symlink already exists'''
     import os
 
@@ -114,7 +114,7 @@ def create_symlink(src, dest):
     return None
 
 
-def cat_keyvalues(d, ignore):
+def cat_path(d, ignore):
     '''Concatenate dictionary key, value pairs to a single string
 
     Args
