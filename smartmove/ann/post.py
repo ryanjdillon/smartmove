@@ -1,134 +1,3 @@
-import matplotlib.pyplot as plt
-import numpy
-
-def preprocess_ann():
-    # Generate experiments/isotope pandas from csv
-    # Compile datasets
-      # Add rho_mod to each sample
-    return None
-
-def postprocess_ann():
-    import os
-    import pandas
-
-    import yamlord
-
-    # TODO update after model path saved to cfg_paths.yml
-    path_data = '/home/ryan/code/python/projects/bodycondition/'
-
-    cfg_paths = yamlord.read_yaml(os.path.join(path_data, 'cfg_paths.yml'))
-
-    path_data = cfg_paths['root']
-    path_csv   = cfg_paths['csv']
-    path_ann  = cfg_paths['ann']
-    path_model = 'theanets_20170316_132225'
-
-    path_out = os.path.join(path_data, path_ann, path_model)
-
-    cfg_ann = yamlord.read_yaml(os.path.join(path_out, 'cfg_ann.yml'))
-
-    fname_field = 'field_experiments.p'
-    fname_isotope = 'isotope_experiments.p'
-    field = pandas.read_pickle(os.path.join(path_data, path_csv, fname_field))
-    isotope = pandas.read_pickle(os.path.join(path_data, path_csv, fname_isotope))
-
-    # EXPERIMENT INPUT
-    # n experiments and animals
-    n_field = len(field)
-    n_animals = len(field['animal'].unique())
-
-    # Min max values of rho_mod and % lipid for each seal
-    # TODO change `total_dens` to `rho_mod`
-    mask_skinny = field['animal']=='skinny'
-    mask_notag = field['animal']=='notag'
-    min_rhomod_skinny = field[mask_skinny]['total_dens'].min()
-    max_rhomod_skinny = field[mask_skinny]['total_dens'].max()
-    min_rhomod_notag = field[mask_notag]['total_dens'].min()
-    max_rhomod_notag = field[mask_notag]['total_dens'].max()
-
-    # lipid range for each seal
-
-    # ISOTOPE INPUT
-    # Min/max body mass of each seal
-    mask_skinny = isotope['animal']=='skinny'
-    mask_notag = isotope['animal']=='notag'
-    min_mass_skinny = isoptope[mask_skinny]['mass_kg'].min()
-    max_mass_skinny = isoptope[mask_skinny]['mass_kg'].max()
-    min_mass_notag = isoptope[mask_notag]['mass_kg'].min()
-    max_mass_notag = isoptope[mask_notag]['mass_kg'].max()
-
-
-    # ANN CONFIG
-    # Number of network configurations
-    results_tuning = pandas.read_pickle(os.path.join(path_out, 'results_tuning.p'))
-    n_configs = len(results_tuning)
-
-    # Number of samples compiled, train, valid, test
-    train = pandas.read_pickle(os.path.join(path_out, 'data_train.p'))
-    valid = pandas.read_pickle(os.path.join(path_out, 'data_valid.p'))
-    test  = pandas.read_pickle(os.path.join(path_out, 'data_test.p'))
-    n_train = len(train[0])
-    n_valid = len(valid[0])
-    n_test = len(test[0])
-    n_all = n_train + n_valid + n_test
-
-    # percentage of compiled dataset in train, valid, test
-    perc_train = n_train/n_all
-    perc_valid = n_valid/n_all
-    perc_test  = n_test/n_all
-
-    # TODO
-    # Range of each bin, density, lipid percent
-    # avg change in body density/%lipid comp. between bins
-    # Total tuning time
-
-    # POSTPROCESS VALUES
-    # Get min/max accuracy and training time for all configurations
-    hi_acc_idx = results_tuning['accuracy'].argmax()
-    lo_acc_idx = results_tuning['accuracy'].argmin()
-    hi_acc = results_tuning['accuracy'].max()
-    lo_acc = results_tuning['accuracy'].min()
-
-    hi_time_idx = results_tuning['training_time'].argmax()
-    lo_time_idx = results_tuning['training_time'].argmin()
-    hi_time = results_tuning['training_time'].max()
-    lo_time = results_tuning['training_time'].min()
-
-    # Best/worst classification accuracies
-    mask_best = results_tuning['accuracy'] == results_tuning['accuracy'].max()
-    best_idx = results_tuning['train_time'][mask_acc].idxmin()
-
-    mask_worst = results_tuning['accuracy'] == results_tuning['accuracy'].max()
-    worst_idx = results_tuning['train_time'][mask_acc].idxmin()
-
-    best_acc = results_tuning['accuracy'][best_idx]
-    best_time = results_tuning['train_time'][best_idx]
-    worst_acc = results_tuning['accuracy'][worst_idx]
-    worst_time = results_tuning['train_time'][worst_idx]
-
-    # Time for prediction
-    import numpy
-    import pandas
-    # Uset best net
-    # TODO loop x times take lowest?
-    net = results_tuning['net'][best_idx]
-    t = time_prediction(net, test[0][0])
-
-    # Filesize of trained NN
-    import os
-    st = os.stat(file_best_ann)
-    trained_size = st.st_size/1000 #kB
-
-    # Precision of each bin
-    tune_cms = pandas.read_pickle('./tune_cms.p')
-    precision = calculate_precision(tune_cms['Validation'])
-
-    # %step between subsets of test for dataset size test
-    # TODO
-
-    # save as txt/yaml
-    return None
-
 
 def time_prediction(net, features):
     import timeit
@@ -145,6 +14,188 @@ def calculate_precision(cm):
         precision[i] = cm[i,i]/sum(cm[i,:])
 
     return precision
+
+
+def process(cfg_project, cfg_ann):
+    from collections import OrderedDict
+    import numpy
+    import os
+    import pandas
+    import pyotelem
+    import yamlord
+
+    from . import pre
+
+    paths = cfg_project['paths']
+    fnames = cfg_project['fnames']
+
+    path_output = os.path.join(paths['project'], paths['ann'],
+                               cfg_project['ann_analyses'][-1])
+
+    fname_field = fnames['csv']['field']
+    fname_isotope = fnames['csv']['isotope']
+
+    file_field = os.path.join(paths['project'], paths['csv'],
+                              fnames['csv']['field'])
+    file_isotope = os.path.join(paths['project'], paths['csv'],
+                                fnames['csv']['isotope'])
+    field, isotope = pre.add_rhomod(file_field, file_isotope)
+
+    # EXPERIMENT INPUT
+    post = OrderedDict()
+    post['input_exp'] = OrderedDict()
+
+    # n experiments and animals
+    post['n_field'] = len(field)
+    post['n_animals'] = len(field['animal'].unique())
+
+    # Min max values of rho_mod and % lipid for each seal
+    post['exp'] = OrderedDict()
+    post['iso'] = OrderedDict()
+    for a in numpy.unique(field['animal']):
+        # Field experiment values
+        post['exp'][a] = OrderedDict()
+        mask = field['animal'] == a
+        post['exp'][a]['min_rhomod'] = field[mask]['rho_mod'].min()
+        post['exp'][a]['max_rhomod'] = field[mask]['rho_mod'].max()
+
+        # lipid range for each seal
+
+        # Isotope experiment values
+        post['iso'][a] = OrderedDict()
+        mask = isotope['animal'] == a
+        min_mass = isotope[mask]['mass_kg'].min()
+        max_mass = isotope[mask]['mass_kg'].max()
+
+    # ANN CONFIG
+    results = pandas.read_pickle(os.path.join(path_output, fnames['ann']['tune']))
+
+    post['ann'] = OrderedDict()
+
+    # Number of network configurations
+    post['ann']['n_configs'] = len(results)
+
+    # Number of samples compiled, train, valid, test
+    post['ann']['n'] = OrderedDict()
+    for set_name in ['train', 'valid', 'test']:
+        file_data = os.path.join(path_output, 'data_{}.p'.format(set_name))
+        data = pandas.read_pickle(file_data)
+        post['ann']['n'][set_name] = len(data[0])
+
+    n_all = sum([n for n in post['ann']['n'].values()])
+    post['ann']['n']['all'] = n_all
+
+    # percentage of compiled dataset in train, valid, test
+    for set_name in ['train', 'valid', 'test']:
+        n_set = post['ann']['n'][set_name]
+        post['ann']['n']['perc_{}'.format(set_name)] = n_set/n_all
+
+    # Total tuning time
+    post['ann']['total_train_time'] = results['train_time'].sum()
+
+    # POSTPROCESS VALUES
+    # Best/worst classification accuracies
+    mask_best = results['accuracy'] == results['accuracy'].max()
+    best_idx = results['train_time'][mask_best].idxmin()
+
+    mask_worst = results['accuracy'] == results['accuracy'].min()
+    worst_idx = results['train_time'][mask_worst].idxmax()
+
+    post['ann']['best_idx'] = best_idx
+    post['ann']['worstt_idx'] = worst_idx
+
+    # Get min/max accuracy and training time for all configurations
+    post['ann']['metrics'] = OrderedDict()
+    for key in ['accuracy', 'train_time']:
+        post['ann']['metrics'][key] = OrderedDict()
+        post['ann']['metrics'][key]['max_idx'] = results[key].argmax()
+        post['ann']['metrics'][key]['min_idx'] = results[key].argmin()
+
+        post['ann']['metrics'][key]['max'] = results[key].max()
+        post['ann']['metrics'][key]['min'] = results[key].min()
+
+        post['ann']['metrics'][key]['best'] = results[key][best_idx]
+        post['ann']['metrics'][key]['worst'] = results[key][worst_idx]
+
+    # Optimal network results
+    post['ann']['opt'] = OrderedDict()
+
+    net = results['net'][best_idx]
+
+    # Loop 10 times taking mean prediction time
+    # Each loop, 100k iterations of timing
+    file_test = os.path.join(path_output, fnames['ann']['test'])
+    test = pandas.read_pickle(file_test)
+    t_pred = numpy.mean([time_prediction(net, test[0][:0]) for _ in range(10)])
+    post['ann']['opt']['t_pred'] = t_pred
+
+    # Filesize of trained NN
+    file_net_best = './net.tmp'
+    pandas.to_pickle(net, file_net_best)
+    st = os.stat(file_net_best)
+    os.remove(file_net_best)
+    post['ann']['opt']['trained_size'] = st.st_size/1000 #kB
+
+    # %step between subsets of test for dataset size test
+    post['ann']['dataset'] = 'numpy.arange(0,1,0.03))[1:]'
+
+    # TODO Load and check with tune_cms.p
+    # Tune confusion matrices (cms) from most optimal configuration
+    # one field per dataset `train`, `valid`, and `test`
+    # first level `targets` if for all datasets
+    post['ann']['bins'] = OrderedDict()
+    file_tune_cms = os.path.join(path_output, fnames['ann']['cms_tune'])
+
+    tune_cms = pandas.read_pickle(file_tune_cms)
+    bins = tune_cms['targets']
+
+    # Range of each bin, density, lipid percent
+    bin_range = range(len(bins)-1)
+
+    rho_hi = numpy.array([bins[i] for i in bin_range])
+    rho_lo = numpy.array([bins[i+1] for i in bin_range])
+    # Note density is converted from kg/m^3 to g/cm^3 for `dens2lip`
+    lip_hi = pyotelem.physio_seal.dens2lip(rho_hi*0.001)['perc_lipid'].values
+    lip_lo = pyotelem.physio_seal.dens2lip(rho_lo*0.001)['perc_lipid'].values
+
+    # Generate bin ranges as strings
+    #TODO lipid percent calculation is incorrect
+    fmt_bin = r'{:7.2f} <= rho_mod < {:7.2f}'
+    fmt_lip = r'{:6.2f} <= lipid % < {:6.2f}'
+    str_bin = [fmt_bin.format(lo, hi) for lo, hi in zip(rho_lo, rho_hi)]
+    str_lip = [fmt_lip.format(lo, hi) for lo, hi in zip(lip_lo, lip_hi)]
+
+    path_sgls = os.path.join(path_output, fnames['ann']['sgls'])
+    sgls_ann = pandas.read_pickle(path_sgls)
+
+    post['ann']['bins']['values'] = list(bins)
+    post['ann']['bins']['value_range'] = str_bin
+    post['ann']['bins']['value_diff'] = list(numpy.diff(bins))
+
+    # Note density is converted from kg/m^3 to g/cm^3 for `dens2lip`
+    lipid_perc = pyotelem.physio_seal.dens2lip(bins*0.001)['perc_lipid'].values
+    post['ann']['bins']['lipid_perc'] = list(lipid_perc)
+    post['ann']['bins']['lipid_range'] = str_lip
+    post['ann']['bins']['lipid_diff'] = list(numpy.diff(lipid_perc))
+
+    precision = calculate_precision(tune_cms['validation']['cm'])
+    post['ann']['bins']['precision'] = [None,] * len(bins)
+    targets = tune_cms['validation']['targets']
+    for i in range(len(bins)):
+        if bins[i] in targets:
+            post['ann']['bins']['precision'][i] = precision[bins[i]==targets]
+        else:
+            post['ann']['bins']['precision'][i] = 'None'
+
+    #data = # hstack of original densities TODO loaded as `sgls_ann`
+    #mean_rho = [data[y == i].mean() for i in range(1, len(bins))]
+    #post['ann']['bins']['means'] = mean_rho
+
+    # Save post processing results as YAML
+    file_post = os.path.join(path_output, fnames['ann']['post'])
+    yamlord.write_yaml(post, file_post)
+
+    return post
 
 
 def target_value_stats(train, valid, test):
@@ -165,8 +216,6 @@ def target_value_stats(train, valid, test):
 
     for key in ['n', 'perc']:
         dfout[key] = pandas.to_numeric(dfout[key])
-
-    print(dfout)
 
     return dfout
 
@@ -338,6 +387,8 @@ def plot_neural_net(ax, left, right, bottom, top, layer_sizes):
     Author: Colin Raffel
     Gist link: https://gist.github.com/craffel/2d727968c3aaebd10359
     '''
+    import matplotlib.pyplot as plt
+
     n_layers = len(layer_sizes)
     v_spacing = (top - bottom)/float(max(layer_sizes))
     h_spacing = (right - left)/float(len(layer_sizes) - 1)
