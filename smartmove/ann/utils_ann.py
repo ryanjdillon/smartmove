@@ -1,3 +1,12 @@
+def ppickle(obj, file_path):
+    '''Write routine for saving output'''
+    import pandas
+
+    with open(file_path, 'wb') as f:
+        pandas.to_pickle(obj, file_path)
+
+    return None
+
 
 def plot_confusion_matrix(cm, targets, normalize=False, title='', cmap=None,
         xlabel_rotation=0):
@@ -51,16 +60,21 @@ def get_confusion_matrices(net, train, valid, targets):
     import numpy
     import sklearn.metrics
 
-    # Filter targets to only those that were assigned to training values
-    targets = targets[sorted(list(numpy.unique(train[1])))]
 
     # Show confusion matrices on the training/validation splits.
     cms = OrderedDict()
-    for label, (X, y) in (('Training', train), ('Validation', valid)):
-        title = '{} confusion matrix'.format(label)
-        label = label.lower()
-        cms[label] = sklearn.metrics.confusion_matrix(y, net.predict(X))
-        plot_confusion_matrix(cms[label], targets, title=title)
+    cms['targets'] = targets
+    for label, (X, y) in (('training', train), ('validation', valid)):
+
+        cms[label] = OrderedDict()
+        # Filter targets to only those that were assigned to training values
+        cms[label]['targets'] = targets[sorted(list(numpy.unique(y)))]
+        # Create confusion matrix as numpy array
+        cms[label]['cm'] = sklearn.metrics.confusion_matrix(y, net.predict(X))
+
+        title = '{} confusion matrix'.format(label.capitalize())
+        plot_confusion_matrix(cms[label]['cm'], cms[label]['targets'], title=title)
+
     return cms
 
 
