@@ -54,7 +54,7 @@ def plot_confusion_matrix(cm, targets, normalize=False, title='', cmap=None,
     return None
 
 
-def get_confusion_matrices(net, train, valid, targets):
+def get_confusion_matrices(net, train, valid, targets, plots=True):
     '''Print and return an sklearn confusion matrix from the input net'''
     from collections import OrderedDict
     import numpy
@@ -72,8 +72,9 @@ def get_confusion_matrices(net, train, valid, targets):
         # Create confusion matrix as numpy array
         cms[label]['cm'] = sklearn.metrics.confusion_matrix(y, net.predict(X))
 
-        title = '{} confusion matrix'.format(label.capitalize())
-        plot_confusion_matrix(cms[label]['cm'], cms[label]['targets'], title=title)
+        if plots:
+            title = '{} confusion matrix'.format(label.capitalize())
+            plot_confusion_matrix(cms[label]['cm'], cms[label]['targets'], title=title)
 
     return cms
 
