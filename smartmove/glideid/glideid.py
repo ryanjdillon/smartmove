@@ -40,20 +40,6 @@ t_max: int
 J:
     magnitude threshold for detecting a fluke stroke in [m/s2]
 '''
-# TODO glide identification performed on z-axis, change?
-
-# TODO CLARIFY `stroke_frq` vs `fluke rate` low pass vs high-pass signals
-
-# TODO add experiment info: # dives, # subglides asc/des in cfg_filter.yml
-# TODO look into t_max / t_max yaml
-# TODO use name convention in rest of repo: fname_, path_, etc.
-# TODO GL and dives ind saved in masks? have routine that calcs dive info
-# TODO move config glide, sgl, filter to default yaml files?
-# TODO get rid of dives and glide_ratios
-# TODO cleanup docstring(s)
-# TODO sort out normalization and glide stats: get_stroke_freq()>automatic_freq()
-# TODO put all masks into `acc_masks` dataframe for simplicity
-# TODO move unessecary plotting to own routine for switching on/off
 
 def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
     from collections import OrderedDict
@@ -232,19 +218,10 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
         for out_path, fname in zip(out_paths, sym_fnames):
             utils.symlink(_join(out_path, fname), _join(out_filt, fname))
 
-        ## TODO
-        # Save filter analysis configuation
-        #cfg_all           = OrderedDict()
-        #cfg_all['glide']  = cfg_glide_exp
-        #cfg_all['sgl']    = cfg_sgl
-        #cfg_all['filter'] = cfg_filt
-
         # Save subglide analysis configuation
         cfg_filt['last_modified'] = _now_str()
         file_cfg_filt = _join(out_sgls, fname_cfg_filt)
         yamlord.write_yaml(cfg_filt, file_cfg_filt)
-
-
 
     return tag, dives, GL, sgls, glide_ratio
 
@@ -318,7 +295,6 @@ def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
 
     # 2 Define dives
     #--------------------------------------------------------------------------
-    # TODO use min_dive_depth and min_analysis_depth?
     print('* Define dives\n')
     dives, masks['dive'] = pyotelem.dives.finddives2(tag['depth'].values,
                                                      cfg_glide['min_depth'])
@@ -332,7 +308,6 @@ def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
     Az_g = tag['Az_g'][masks['exp']].values
 
     # NOTE change `stroke_ratio` here to modify selectio method
-    # TODO should perform initial lp/hp filter, then `stroke_f` comes from high-pass
     # should be OK other than t_max, these values are too high
     if debug is False:
         cutoff_frq, stroke_frq, stroke_ratio = pyotelem.glides.get_stroke_freq(Ax_g,
@@ -448,9 +423,6 @@ def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
 
     print('* Get fluke signal threshold\n')
 
-    # TODO Need to set J (signal threshold) here, user input should be the
-    # power, not the frequency. Just use a standard plot of acceleration here?
-
     if debug is False:
         # Plot PSD for J selection
         Ax_g_hf = tag['Ax_g_hf_'+cutoff_str][masks['exp']].values
@@ -488,16 +460,13 @@ def _process_glides(cfg_glide, tag, fs_a, dives, masks, plots=True,
 
     cutoff_str = str(cfg_glide['cutoff_frq'])
 
-    # TODO t_max * fs_a in routine below, 16.0 in cfg, check Kagari
-    # TODO review once magnet_rot() routine finished
     # Get GL from dorso-ventral axis of the HPF acc signal
     GL = pyotelem.glides.get_stroke_glide_indices(tag['Az_g_hf_'+cutoff_str].values,
                                                   fs_a,
                                                   cfg_glide['J'],
                                                   cfg_glide['t_max'])
-    # TODO
-    # check glides duration and positive and negative zero crossings based
-    # on selected J and t_max#
+
+    # check glides duration and +/- zero crossings from selected J and t_max
     masks['glides'] = utils.mask_from_noncontiguous_indices(len(tag), GL[:,0], GL[:,1])
 
     return GL, masks
@@ -557,8 +526,6 @@ def _save_config(cfg_add, file_cfg_yaml, name='parameters'):
     cfg['last_modified'] = _now_str()
 
     # Get git hash and versions of dependencies
-    # TODO the versions added by this should only be logged in release, or
-    # maybe check local installed vs requirements versions
     cfg['versions'] = utils.get_versions('smartmove')
 
     cfg[name] = cfg_add
@@ -566,74 +533,3 @@ def _save_config(cfg_add, file_cfg_yaml, name='parameters'):
     yamlord.write_yaml(cfg, file_cfg_yaml)
 
     return cfg
-
-
-#def _cfg_glide_params():
-#    '''Add fields for glide analysis to config dictionary'''
-#    from collections import OrderedDict
-#    import numpy
-#
-#    cfg_glide = OrderedDict()
-#
-#    # TODO not currently used, useful with magnetometer data
-#    ## Acceleromter/Magnotometer axis to analyze
-#    #cfg_glide['axis'] = 0
-#
-#    # Number of samples per frequency segment in PSD calculation
-#    cfg_glide['nperseg'] = 256
-#
-#    # Threshold above which to find peaks in PSD
-#    cfg_glide['peak_thresh'] = 0.10
-#
-#    # High/low pass cutoff frequency, determined from PSD plot
-#    cfg_glide['cutoff_frq'] = None
-#
-#    # Frequency of stroking, determinded from PSD plot
-#    cfg_glide['stroke_frq'] = 0.4 # Hz
-#
-#    # fraction of `stroke_frq` to calculate cutoff frequency (Wn)
-#    cfg_glide['stroke_ratio'] = 0.4
-#
-#    # Maximum length of stroke signal
-#    cfg_glide['t_max'] = 1 / cfg_glide['stroke_frq'] # seconds
-#
-#    # Minimumn frequency for identifying strokes (3. Get stroke_frq)
-#    cfg_glide['J'] = '{:.4f}'.format(2 / 180 * numpy.pi) # 0.0349065 Hz
-#
-#    # For magnetic pry routine
-#    cfg_glide['alpha'] = 25
-#
-#    # TODO redundant for filt_params?
-#    # Minimum depth at which to recognize a dive (2. Define dives)
-#    cfg_glide['min_depth'] = 0.4
-#
-#    return cfg_glide
-#
-#
-#def _cfg_sgl_params():
-#    '''Add fields for subglide analysis to config dictionary'''
-#    from collections import OrderedDict
-#
-#    cfg_sgl = OrderedDict()
-#
-#    # Duration of sub-glides (8. Split sub-glides, 10. Calc glide des/asc)
-#    cfg_sgl['dur'] = 2 # seconds
-#
-#    ## TODO not used
-#    ## Minimum duration of sub-glides, `False` excludes sublides < dur seconds
-#    #cfg_sgl['min_dur'] = False # seconds
-#
-#    return cfg_sgl
-
-
-def glide_ratio(tag, masks, dives):
-    '''Calculate summary statistics for glides'''
-    import pyotelem
-
-    glide_ratio = pyotelem.glides.calc_glide_ratios(dives,
-                                                    masks['des'].values,
-                                                    masks['asc'].values,
-                                                    masks['glide'],
-                                                    tag['depth'],
-                                                    tag['p_lf'])
-    return glide_ratio
