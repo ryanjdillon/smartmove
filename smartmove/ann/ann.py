@@ -232,6 +232,10 @@ def create_algorithm(train, valid, config, n_features, n_targets, plots=False):
 
         return None
 
+    # Build neural net with defined configuration
+    hidden_layers = [config['hidden_nodes'],]*config['hidden_layers']
+    net = theanets.Classifier([n_features,] + hidden_layers + [n_targets,])
+
     # SGD converges to minima/maxima faster with momentum
     # NAG, ADADELTA, RMSProp have equivalents of parameter specific momentum
     if config['algorithm'] is 'sgd':
@@ -366,13 +370,14 @@ def _tune_net(train, valid, test, targets, configs, n_features, n_targets, plots
     print('Tuning test accuracy: {}'.format(test_accuracy))
 
     # Print confusion matrices for train and test
-    cms = utils_ann.get_confusion_matrices(best_net, train, test, targets)
+    cms = utils_ann.get_confusion_matrices(best_net, train, test, targets,
+                                           plots=plots)
 
     return results_tune, test_accuracy, cms
 
 
 def _test_dataset_size(best_config, train, valid, test, targets, n_features,
-        n_targets):
+        n_targets, plots):
     '''Train nets with best configuration and varying dataset sizes
 
     Args
@@ -476,12 +481,13 @@ def _test_dataset_size(best_config, train, valid, test, targets, n_features,
     test_accuracy = best_net.score(test[0], test[1])
 
     # Print confusion matrices for train and test
-    cms = utils_ann.get_confusion_matrices(best_net, train, test, targets)
+    cms = utils_ann.get_confusion_matrices(best_net, train, test, targets,
+                                           plots=plots)
 
     return results_dataset, test_accuracy, cms
 
 
-def run(cfg_project, cfg_ann, debug=False, plots=False):
+def run(cfg_project, cfg_ann, plots=False, debug=False):
     '''
     Compile subglide data, tune network architecture and test dataset size
 
@@ -591,7 +597,8 @@ def run(cfg_project, cfg_ann, debug=False, plots=False):
                                                       configs,
                                                       n_features,
                                                       n_targets,
-                                                      plots)
+                                                      plots,
+                                                      )
 
     # Get neural net configuration with best accuracy
     best_config = get_best(results_tune, 'config')
@@ -610,6 +617,7 @@ def run(cfg_project, cfg_ann, debug=False, plots=False):
                                                                   bins,
                                                                   n_features,
                                                                   n_targets,
+                                                                  plots,
                                                                   )
 
     print('\nTest data accuracy (Configuration tuning): {}'.format(tune_accuracy))
@@ -624,10 +632,12 @@ def run(cfg_project, cfg_ann, debug=False, plots=False):
                                path_model)
     os.makedirs(path_output, exist_ok=True)
 
-    # Save config as a `*.yml` file to the output directory
+    # Save updated `cfg_project` to project directory
+    file_cfg_project = os.path.join(paths['project'], fnames['project']['cfg'])
+    yamlord.write_yaml(cfg_project, os.path.join(path_output, file_cfg_project))
+
+    # Save updated `cfg_ann` to output directory
     file_cfg_ann = os.path.join(path_output, fnames['ann']['cfg_ann'])
-    file_cfg_project = os.path.join(path_output, fnames['project']['cfg'])
-    yamlord.write_yaml(cfg_project, os.path.join(path_output, file_cfg_ann))
     yamlord.write_yaml(cfg_ann, os.path.join(path_output, file_cfg_ann))
 
     # Compiled SGLs after NaN drop
@@ -635,7 +645,7 @@ def run(cfg_project, cfg_ann, debug=False, plots=False):
 
     # Save output data to analysis output directory
     tune_fname = fnames['ann']['tune']
-    datasize_fname = fnames['ann']['dataset_size']
+    datasize_fname = fnames['ann']['dataset']
     ppickle(results_tune, os.path.join(path_output, tune_fname))
     ppickle(results_dataset, os.path.join(path_output, datasize_fname))
 
@@ -648,8 +658,8 @@ def run(cfg_project, cfg_ann, debug=False, plots=False):
     ppickle(cms_tune, os.path.join(path_output, fnames['ann']['cms_tune']))
     ppickle(cms_data, os.path.join(path_output, fnames['ann']['cms_data']))
 
-    return cfg_ann, (train, valid, test, bins), (results_tune, results_dataset,
-                                                 cms_tune, cms_data)
+    return cfg_ann, (train, valid, test), (results_tune, results_dataset,
+                                           cms_tune, cms_data)
 
 if __name__ == '__main__':
     import yamlord
