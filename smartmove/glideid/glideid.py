@@ -1,47 +1,60 @@
 '''
-Body density estimation. Japan workshop May 2016
+Functions for performing glide identification on data collected from tags (i.e.
+data loggers)
 
-Python implementation:  Ryan J. Dillon
-Original Matlab Author: Lucia Martina Martin Lopez
-
-Attributes
-----------
-tag: pandas.DataFrame
-    contains calibrated sensor data and data processed within glide analysis
-exp_ind: numpy.ndarray
-    indices of `tag` data to be analyzed
-dives: pandas.DataFrame
-    start_idx
-    stop_idx
-    dive_dur
-    depths_max
-    depths_max_idx
-    depths_mean
-    compr_mean
-cutoff_frq: float
-    cutoff frequency for separating low and high frequency signals
-stroke_frq: float
-    frequency at which maximum power is seen in accelerometer PSD
-J:
-    frequency of stroke signal in accelerometer data (m/s2)
-t_max:
-    
-GL: ndarray
-    start/stop indices of glide events in `tag` data
-SGL:
-    start/stop indices of subglide events in `tag` data
-sgls: pandas.DataFrame
-  Contains subglide summary information of `tag` data
-glide_ratio: pandas.DataFrame
-  Contains glide ratio summary information of `tag` data
-t_max: int
-    maximum duration allowable for a fluke stroke in seconds, it can be set as
-    1/`stroke_frq`
-J:
-    magnitude threshold for detecting a fluke stroke in [m/s2]
+This code is an adaptation of the script written by Lucia Martina Martin Lopez,
+presented at a body density estimation workshop at the University of Tokyo,
+Japan in May, 2016.
 '''
 
-def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
+def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
+    '''Run glide identification on data in configuration paths
+
+    Args
+    ----
+    cfg_project: OrderedDict
+        Dictionary of configuration parameters for the current project
+    cfg_glide: OrderedDict
+        Dictionary of configuration parameters for glide identification
+    cfg_filt: OrderedDict
+        Dictionary of configuration parameters for filtering sub-glides
+    sgl_dur: int
+        Duration of sub-glide splits (seconds)
+    debug: bool
+        Switch for turning on debugging (Default `False`). When activated values
+        for `cutoff_freq` and `J` will be set to generic values and diagnostic
+        plots of the `speed` parameter in `tag` will be displayed.
+    plots: bool
+        Switch for turning on plots (Default `True`). When activated plots for
+        reviewing signal processing will be displayed.
+
+    Attributes
+    ----------
+    cutoff_frq: float
+        Cutoff frequency for separating low and high frequency signals
+    stroke_frq: float
+        Frequency at which maximum power is seen in accelerometer PSD
+    J:
+        Frequency of stroke signal in accelerometer data (m/s2)
+    t_max: int
+        Maximum duration allowable for a fluke stroke in seconds, it can be set as
+        1/`stroke_frq`
+    J:
+        Magnitude threshold for detecting a fluke stroke in [m/s2]
+
+    Returns
+    -------
+    tag: pandas.DataFrame
+        Data loaded from tag with associated sensors
+    dives: pandas.DataFrame
+        Start and stop indices and attributes for dive events in `tag` data,
+        including: start_idx, stop_idx, dive_dur, depths_max, depths_max_idx,
+        depths_mean, compr_mean.
+    GL: ndarray, (n, 2)
+        Start and stop indices and attributes of glide events in `tag` data,
+    sgls: pandas.DataFrame
+        Contains sub-glide summary information of `tag` data
+    '''
     from collections import OrderedDict
     import numpy
     import os
@@ -54,7 +67,7 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
     from .. import utils
     from . import utils_lleo
 
-    # Extract path and filname dicts from `cfg_project`
+    # Extract path and filename dictionaries from `cfg_project`
     paths   = cfg_project['paths']
     fnames  = cfg_project['fnames']
 
@@ -88,7 +101,7 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
 
             path_exps.append(path_exp)
 
-    # Get user selection of acc paths to process
+    # Get user selection of tag data paths to process
     path_exps = sorted(path_exps)
     msg = 'Enter paths numbers to process:\n'
     process_ind = pyotelem.utils.get_dir_indices(msg, path_exps)
@@ -136,7 +149,7 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
             plotdynamics.plot_swim_speed(exp_ind, tag['speed'].values)
 
 
-        # Signal process data, calculate derived data and find stroke freqencies
+        # Signal process data, calculate derived data and find stroke frequencies
         cfg_glide_exp, tag, dives, masks, exp_ind = _process_sensor_data(cfg_project,
                                                                      cfg_glide,
                                                                      path_exp,
@@ -170,9 +183,9 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
         yamlord.write_yaml(cfg_glide_exp, file_cfg_glide_exp)
 
 
-        # SPLIT GLIDES TO SUBGLIDES
+        # SPLIT GLIDES TO SUB-GLIDES
         #--------------------------
-        # Split into subglides, generate summary tables
+        # Split into sub-glides, generate summary tables
         sgls, masks['sgls'] = _process_sgls(tag, fs_a, dives, GL, sgl_dur)
 
         # Create output path from passed `sgls` duration
@@ -183,7 +196,7 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
         sgls.to_pickle(_join(out_sgls, fname_sgls))
         masks['sgls'].to_pickle(_join(out_sgls, fname_mask_tag_sgls))
 
-        # FILTER AND PLOT SUBGLIDES
+        # FILTER AND PLOT SUB-GLIDES
         #--------------------------
         # Get masks of `tag` and `sgls` data for sgls matching constraints
         exp_ind = numpy.where(masks['exp'])[0]
@@ -218,17 +231,54 @@ def run_all(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
         for out_path, fname in zip(out_paths, sym_fnames):
             utils.symlink(_join(out_path, fname), _join(out_filt, fname))
 
-        # Save subglide analysis configuation
+        # Save sub-glide analysis configuration
         cfg_filt['last_modified'] = _now_str()
         file_cfg_filt = _join(out_sgls, fname_cfg_filt)
         yamlord.write_yaml(cfg_filt, file_cfg_filt)
 
-    return tag, dives, GL, sgls, glide_ratio
+    return tag, dives, GL, sgls
 
 
 def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
         plots=True, debug=False):
-    '''Calculate body conditions summary statistics'''
+    '''Calculate body conditions summary statistics
+
+    Args
+    ----
+    cfg_project: OrderedDict
+        Dictionary of configuration parameters for the current project
+    cfg_glide: OrderedDict
+        Dictionary of configuration parameters for glide identification
+    path_exp: str
+        Directory name of `tag` data being processed
+    tag: pandas.DataFrame
+        Data loaded from tag with associated sensors
+    fs_a: float
+        Sampling frequency (i.e. number of samples per second)
+    plots: bool
+        Switch for turning on plots (Default `True`). When activated plots for
+        reviewing signal processing will be displayed.
+    debug: bool
+        Switch for turning on debugging (Default `False`). When activated values
+        for `cutoff_freq` and `J` will be set to generic values and diagnostic
+        plots of the `speed` parameter in `tag` will be displayed.
+
+    Returns
+    -------
+    cfg: OrderedDict
+    tag: pandas.DataFrame
+        Data loaded from tag with associated sensors, with added fields from
+        signal processing
+    dives: pandas.DataFrame
+        Start and stop indices and attributes for dive events in `tag` data,
+        including: start_idx, stop_idx, dive_dur, depths_max, depths_max_idx,
+        depths_mean, compr_mean.
+    masks: pandas.DataFrame
+        Boolean masks for slicing identified dives, glides, and sub-glides from
+        the `tag` dataframe.
+    exp_ind: OrderedDict
+        Start and stop indices of `tag` data to be analyzed
+    '''
     from collections import OrderedDict
     import numpy
     from os.path import join as _join
@@ -275,7 +325,7 @@ def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
         cfg_exp[path_exp]['stop_idx']  = exp_idxs[1]
         yamlord.write_yaml(cfg_exp, file_cfg_exp)
 
-    # Creat dataframe for storing masks for various views of the data
+    # Create dataframe for storing masks for various views of the data
     masks = pandas.DataFrame(index=range(len(tag)), dtype=bool)
 
     # Create mask of values to be considered part of the analysis
@@ -340,7 +390,7 @@ def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
             key = '{}_{}_{}'.format(param, suffix, cutoff_str)
             tag[key] = pyotelem.dsp.butter_apply(b, a, tag[param].values)
 
-    # Plot low and high freqency accelerometer signals
+    # Plot low and high frequency accelerometer signals
     if plots is True:
         plotdsp.plot_lf_hf(tag['Ax_g'][masks['exp']],
                            tag['Ax_g_lf_'+cutoff_str][masks['exp']],
@@ -378,7 +428,7 @@ def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
                                                              cfg['cutoff_frq'],
                                                              fs_a,
                                                              order=5)
-    # Typecast des/asc columns to `bool`
+    # Typecast `des` and `asc` columns to `bool`
     masks = masks.astype(bool)
     if plots is True:
         plotdives.plot_dives_pitch(tag['depth'][masks['exp']],
@@ -473,7 +523,7 @@ def _process_glides(cfg_glide, tag, fs_a, dives, masks, plots=True,
 
 
 def _process_sgls(tag, fs_a, dives, GL, sgl_dur):
-    '''Split subglides and generate summary dataframe'''
+    '''Split sub-glides and generate summary dataframe'''
     import numpy
 
     import pyotelem.glides
@@ -488,11 +538,11 @@ def _process_sgls(tag, fs_a, dives, GL, sgl_dur):
                                                       GL)
 
 
-    # 9 Generate summary information table for subglides
+    # 9 Generate summary information table for sub-glides
     #--------------------------------------------------------------------------
     pitch_lf_deg = numpy.rad2deg(tag['p_lf'].values)
 
-    print('* Generate summary information table for subglides\n')
+    print('* Generate summary information table for sub-glides\n')
     sgls = pyotelem.glides.calc_glide_des_asc(tag['depth'].values,
                                               tag['p_lf'].values,
                                               tag['r_lf'].values,
@@ -513,7 +563,7 @@ def _now_str():
 
 
 def _save_config(cfg_add, file_cfg_yaml, name='parameters'):
-    '''Load analysis configuration defualts'''
+    '''Load analysis configuration defaults'''
     from collections import OrderedDict
     import datetime
 
