@@ -7,7 +7,7 @@ presented at a body density estimation workshop at the University of Tokyo,
 Japan in May, 2016.
 '''
 
-def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
+def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
     '''Run glide identification on data in configuration paths
 
     Args
@@ -20,13 +20,13 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
         Dictionary of configuration parameters for filtering sub-glides
     sgl_dur: int
         Duration of sub-glide splits (seconds)
+    plots: bool
+        Switch for turning on plots (Default `True`). When activated plots for
+        reviewing signal processing will be displayed.
     debug: bool
         Switch for turning on debugging (Default `False`). When activated values
         for `cutoff_freq` and `J` will be set to generic values and diagnostic
         plots of the `speed` parameter in `tag` will be displayed.
-    plots: bool
-        Switch for turning on plots (Default `True`). When activated plots for
-        reviewing signal processing will be displayed.
 
     Attributes
     ----------
@@ -150,7 +150,7 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
 
 
         # Signal process data, calculate derived data and find stroke frequencies
-        cfg_glide_exp, tag, dives, masks, exp_ind = _process_sensor_data(cfg_project,
+        cfg_glide_exp, tag, dives, masks, exp_ind = _process_tag_data(cfg_project,
                                                                      cfg_glide,
                                                                      path_exp,
                                                                      tag,
@@ -239,8 +239,8 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, debug=False, plots=True):
     return tag, dives, GL, sgls
 
 
-def _process_sensor_data(cfg_project, cfg_glide, path_exp, tag, fs_a,
-        plots=True, debug=False):
+def _process_tag_data(cfg_project, cfg_glide, path_exp, tag, fs_a, plots=True,
+        debug=False):
     '''Calculate body conditions summary statistics
 
     Args
