@@ -139,7 +139,6 @@ def process(cfg_project, cfg_ann):
     # %step between subsets of test for dataset size test
     post['ann']['dataset'] = 'numpy.arange(0,1,0.03))[1:]'
 
-    # TODO Load and check with tune_cms.p
     # Tune confusion matrices (cms) from most optimal configuration
     # one field per dataset `train`, `valid`, and `test`
     # first level `targets` if for all datasets
@@ -159,7 +158,6 @@ def process(cfg_project, cfg_ann):
     lip_lo = pyotelem.physio_seal.dens2lip(rho_lo*0.001)['perc_lipid'].values
 
     # Generate bin ranges as strings
-    #TODO lipid percent calculation is incorrect
     fmt_bin = r'{:7.2f} <= rho_mod < {:7.2f}'
     fmt_lip = r'{:6.2f} <= lipid % < {:6.2f}'
     str_bin = [fmt_bin.format(lo, hi) for lo, hi in zip(rho_lo, rho_hi)]
@@ -186,10 +184,6 @@ def process(cfg_project, cfg_ann):
             post['ann']['bins']['precision'][i] = precision[bins[i]==targets]
         else:
             post['ann']['bins']['precision'][i] = 'None'
-
-    #data = # hstack of original densities TODO loaded as `sgls_ann`
-    #mean_rho = [data[y == i].mean() for i in range(1, len(bins))]
-    #post['ann']['bins']['means'] = mean_rho
 
     # Save post processing results as YAML
     file_post = os.path.join(path_output, fnames['ann']['post'])

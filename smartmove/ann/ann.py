@@ -7,9 +7,6 @@ def get_attr(results, group, attr):
     return numpy.asarray(attrs)
 
 
-# TODO save most recent model path to paths yaml
-
-
 def _normalize_data(df, features, target, n_targets):
     '''Normalize features and target values
 
@@ -209,41 +206,6 @@ def create_algorithm(train, valid, config, n_features, n_targets, plots=False):
     '''
     from collections import OrderedDict
     import theanets
-
-    # Build neural net with defined configuration
-    hidden_layers = [config['hidden_nodes'],]*config['hidden_layers']
-    net = theanets.Classifier([n_features,] + hidden_layers + [n_targets,])
-
-    # Uses 'mse' as loss function # TODO cross-entropy?
-    #net = theanets.Regressor(layers=[n_features, config['hidden_nodes'], n_targets])
-
-    # mini-batchs
-    # http://sebastianruder.com/optimizing-gradient-descent/index.html#minibatchgradientdescent
-    # https://github.com/lmjohns3/theanets/blob/master/scripts/theanets-char-rnn
-
-
-    # Input/hidden dropout
-    # Input/hidden noise
-
-    # Learning rate
-
-    # Shuffling, Curriculum learning
-    # http://sebastianruder.com/optimizing-gradient-descent/index.html#shufflingandcurriculumlearning
-
-    # Batch normalization?
-    # http://sebastianruder.com/optimizing-gradient-descent/index.html#batchnormalization
-
-    # Early stopping https://github.com/lmjohns3/theanets/issues/17
-
-    # TODO figure out mini-batches, data callable
-    # https://groups.google.com/forum/#!topic/theanets/LctHBDAKdH8
-    #batch_size = 64
-
-    #if not train_batches:
-    #    train_batchs = batch_size
-    #if not valid_batches:
-    #    valid_batches = batch_size
-
 
     def plot_monitors(attrs, monitors_train, monitors_valid):
         import matplotlib.pyplot as plt
@@ -552,8 +514,6 @@ def run(cfg_project, cfg_ann, debug=False, plots=False):
     as reusing the `validation` set can cause the routine to overfit to the
     validation set.
     '''
-
-    # TODO add starttime, finishtime
 
     from collections import OrderedDict
     import climate

@@ -261,8 +261,6 @@ def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
         sgls_exp  = pandas.read_pickle(file_sgls)
 
         # Filter with saved mask meeting criteria
-        # TODO run filter routine on passed cfg_filt instead of loading filt
-        # mask
         file_mask_sgls_filt = os.path.join(path_data_glide, fname_mask_sgls_filt)
         mask_sgls = numpy.load(file_mask_sgls_filt)
         sgls_exp  = sgls_exp[mask_sgls]
@@ -271,7 +269,6 @@ def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
         dive_ids_exp = numpy.unique(sgls_exp['dive_id'][:])
         dives_exp = pandas.DataFrame(index=range(len(dive_ids_exp)))
         dives_exp['dive_id'] = dive_ids_exp
-        # TODO read lung volume from file, or assign value here
 
         # Add exp_id/animal_id fields
         sgls_exp  = _add_ids_to_df(sgls_exp, exp_id)
@@ -339,7 +336,6 @@ def _create_ann_inputs(cfg_ann, path_project, path_tag, path_glide, path_ann, pa
                                                          fname_sgls,
                                                          fname_mask_sgls_filt)
 
-    # TODO could move this to `utils_glide`
     # Add integer dive_phase column
     des = sgls_all['dive_phase'] == 'descent'
     asc = sgls_all['dive_phase'] == 'ascent'
