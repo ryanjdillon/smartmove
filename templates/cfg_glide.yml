@@ -1,0 +1,33 @@
+# TODO not currently used, useful with magnetometer data
+## Acceleromter/Magnotometer axis to analyze
+#axis: 0
+
+# Number of samples per frequency segment in PSD calculation
+nperseg: 256
+
+# Threshold above which to find peaks in PSD
+peak_thresh: 0.10
+
+# High/low pass cutoff frequency, determined from PSD plot
+cutoff_frq: None
+
+# Frequency of stroking, determinded from PSD plot
+stroke_frq: 0.4 # Hz
+
+# fraction of `stroke_frq` to calculate cutoff frequency (Wn)
+stroke_ratio: 0.4
+
+# Maximum length of stroke signal
+# 1/stroke_freq
+t_max: 2.5 # seconds
+
+# Minimumn frequency for identifying strokes (3. Get stroke_frq)
+# 2 / (180*numpy.pi) (Hz)
+J: 0.0349
+
+# For magnetic pry routine
+alpha: 25
+
+# TODO redundant for filt_params?
+# Minimum depth at which to recognize a dive (2. Define dives)
+min_depth: 0.4
