@@ -296,8 +296,7 @@ def _process_tag_data(cfg_project, cfg_glide, path_exp, tag, fs_a, plots=True,
 
     exp_idxs = [None, None]
 
-    fname_cfg_exp = fnames['tag']['cfg_exp']
-    file_cfg_exp  = _join(paths['project'], paths['tag'], fname_cfg_exp)
+    file_cfg_exp  = _join(paths['project'], fnames['tag']['cfg_exp'])
     cfg = copy.deepcopy(cfg_glide)
 
     try:
