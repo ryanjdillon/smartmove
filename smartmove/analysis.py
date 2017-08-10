@@ -25,23 +25,17 @@ class Analysis(object):
         self.path_project = os.path.abspath(path_project)
 
         file_cfg_project = _join(path_project, 'cfg_project.yml')
-
-        # Check that the project environment has been created
-        if not os.path.isfile(file_cfg_project):
-            msg = ('The configuration file `{}` was not found. Please be '
-                   'refer to the documentation on how to setup your project '
-                   'directory'.format(fname_cfg_project))
-            raise SystemError(msg)
-
         self.cfg_project = yamlord.read_yaml(file_cfg_project)
 
         fnames = self.cfg_project['fnames']
         file_cfg_ann = _join(path_project, fnames['ann']['cfg_ann'])
+        file_cfg_glide = _join(path_project, fnames['glide']['cfg_glide'])
         file_cfg_filt = _join(path_project, fnames['glide']['cfg_filt'])
         file_cfg_experiments = _join(path_project, fnames['tag']['cfg_exp'])
 
         self.cfg_ann = yamlord.read_yaml(file_cfg_ann)
-        self.cfg_filt = yamlord.read_yaml(file_cfg_ann)
+        self.cfg_glide = yamlord.read_yaml(file_cfg_glide)
+        self.cfg_filt = yamlord.read_yaml(file_cfg_filt)
         self.cfg_experiments = yamlord.read_yaml(file_cfg_experiments)
 
         self.sgl_dur = sgl_dur

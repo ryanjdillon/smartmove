@@ -45,7 +45,7 @@ fnames:
   # Glide analysis input/output
   glide:
     cfg_glide:       cfg_glide.yml
-    cfg_filt:        cfg_sgl-filter.yml
+    cfg_filt:        cfg_subglide-filter.yml
     dives:           data_dives.p
     sgls:            data_sgls.p
     glide_ratio :    data_ratios.p

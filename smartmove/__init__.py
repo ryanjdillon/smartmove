@@ -20,7 +20,7 @@ def create_project(path_project):
     fname_cfg_exp = 'cfg_experiments.yml'
     fname_cfg_ann = 'cfg_ann.yml'
     fname_cfg_glide = 'cfg_glide.yml'
-    fname_cfg_filt = 'cfg_sgl-filt.yml'
+    fname_cfg_filt = 'cfg_subglide-filter.yml'
     for fname in [fname_cfg_project, fname_cfg_exp, fname_cfg_ann,
                   fname_cfg_glide, fname_cfg_filt]:
         src = os.path.join(module_path, 'templates', fname)
