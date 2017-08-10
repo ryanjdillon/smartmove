@@ -34,7 +34,7 @@ def load_lleo(path_data_tag, file_cal_acc, file_cal_prop):
     cal_dict = yamlord.read_yaml(file_cal_acc)
 
     # Verify sensor ID of data matches ID of CAL
-    if cal_dict['tag_id'] != str(tag_id):
+    if str(cal_dict['tag_id']) != str(tag_id):
         raise SystemError('Data `tag_id` ({}) does not match calibration '
                           '`tag_id` ({})'.format(tag_id, cal_dict['tag_id']))
 
