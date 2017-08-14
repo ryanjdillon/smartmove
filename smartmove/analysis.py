@@ -140,6 +140,7 @@ class Analysis(object):
 
     def set_ann_analysis(self):
         '''Set the ANN analysis to work with'''
+        import os
         import pyotelem
 
         paths = self.cfg_project['paths']
@@ -148,13 +149,14 @@ class Analysis(object):
         path_ann = _join(paths['project'], paths['ann'])
 
         # Get user selection for ANN analysis to load
-        print('\nANN analyses selections:')
-        i = 0
-        for path in os.listdir(path_ann):
-            if os.path.isdir(path):
-                print('{:3.0f}. {}'.format(i, path))
+        print('\nAvailable ANN analyses selections:')
         print('')
-        idx = pyotelem.utils.recursive_input('ANN model number', int)
+        print('{:>3}. {}'.format('No', 'Path'))
+        print('-----------------------------')
+        for i, path in enumerate(self.cfg_project['ann_analyses']):
+            print('{:3.0f}. {}'.format(i, path))
+        print('')
+        idx = pyotelem.utils.recursive_input('ANN analysis number', int)
 
         self.current_ann = self.cfg_project['ann_analyses'][idx]
 
