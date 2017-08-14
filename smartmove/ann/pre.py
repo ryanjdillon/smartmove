@@ -351,9 +351,6 @@ def _create_ann_inputs(cfg_ann, path_project, path_tag, path_glide, path_ann, pa
     # Add column with body condition target values to `sgls`
     sgls = insert_field_col_to_sgls(sgls, field)
 
-    # Save output
-    sgls.to_pickle(os.path.join(path_project, path_ann, 'sgls_all.p'))
-
     return exps_all, sgls, dives_all
 
 

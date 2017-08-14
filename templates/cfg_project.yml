@@ -58,7 +58,6 @@ fnames:
   ann:
     cfg_ann:  cfg_ann.yml
     sgls:     data_sgls.p
-    ann_sgls: sgls_all.p
     train:    data_train.p
     valid:    data_valid.p
     test:     data_test.p

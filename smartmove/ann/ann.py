@@ -641,7 +641,7 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
     yamlord.write_yaml(cfg_ann, os.path.join(path_output, file_cfg_ann))
 
     # Compiled SGLs after NaN drop
-    utils_ann.ppickle(nsgls, os.path.join(path_output, fnames['ann']['ann_sgls']))
+    utils_ann.ppickle(nsgls, os.path.join(path_output, fnames['ann']['sgls']))
 
     # Save output data to analysis output directory
     tune_fname = fnames['ann']['tune']
@@ -650,7 +650,6 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
     ppickle(results_dataset, os.path.join(path_output, datasize_fname))
 
     # Save train, validation, test datasets
-    ppickle(sgls, os.path.join(path_output, fnames['ann']['sgls']))
     ppickle(train, os.path.join(path_output, fnames['ann']['train']))
     ppickle(valid, os.path.join(path_output, fnames['ann']['valid']))
     ppickle(test, os.path.join(path_output, fnames['ann']['test']))
