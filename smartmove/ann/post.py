@@ -102,7 +102,7 @@ def process(cfg_project, cfg_ann):
     worst_idx = results['train_time'][mask_worst].idxmax()
 
     post['ann']['best_idx'] = best_idx
-    post['ann']['worstt_idx'] = worst_idx
+    post['ann']['worst_idx'] = worst_idx
 
     # Get min/max accuracy and training time for all configurations
     post['ann']['metrics'] = OrderedDict()
