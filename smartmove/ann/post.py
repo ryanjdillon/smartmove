@@ -1,3 +1,4 @@
+from os.path import join as _join
 
 def time_prediction(net, features):
     import timeit
@@ -29,15 +30,15 @@ def process(cfg_project, cfg_ann):
     paths = cfg_project['paths']
     fnames = cfg_project['fnames']
 
-    path_output = os.path.join(paths['project'], paths['ann'],
+    path_output = _join(paths['project'], paths['ann'],
                                cfg_project['ann_analyses'][-1])
 
     fname_field = fnames['csv']['field']
     fname_isotope = fnames['csv']['isotope']
 
-    file_field = os.path.join(paths['project'], paths['csv'],
+    file_field = _join(paths['project'], paths['csv'],
                               fnames['csv']['field'])
-    file_isotope = os.path.join(paths['project'], paths['csv'],
+    file_isotope = _join(paths['project'], paths['csv'],
                                 fnames['csv']['isotope'])
     field, isotope = pre.add_rhomod(file_field, file_isotope)
 
@@ -68,7 +69,7 @@ def process(cfg_project, cfg_ann):
         max_mass = isotope[mask]['mass_kg'].max()
 
     # ANN CONFIG
-    results = pandas.read_pickle(os.path.join(path_output, fnames['ann']['tune']))
+    results = pandas.read_pickle(_join(path_output, fnames['ann']['tune']))
 
     post['ann'] = OrderedDict()
 
@@ -77,9 +78,15 @@ def process(cfg_project, cfg_ann):
 
     # Number of samples compiled, train, valid, test
     post['ann']['n'] = OrderedDict()
+
+    file_train = _join(path_output, 'data_train.p')
+    file_valid = _join(path_output, 'data_valid.p')
+    file_test = _join(path_output, 'data_test.p')
+    train = pandas.read_pickle(file_train)
+    valid = pandas.read_pickle(file_valid)
+    test = pandas.read_pickle(file_test)
+
     for set_name in ['train', 'valid', 'test']:
-        file_data = os.path.join(path_output, 'data_{}.p'.format(set_name))
-        data = pandas.read_pickle(file_data)
         post['ann']['n'][set_name] = len(data[0])
 
     n_all = sum([n for n in post['ann']['n'].values()])
@@ -124,7 +131,7 @@ def process(cfg_project, cfg_ann):
 
     # Loop 10 times taking mean prediction time
     # Each loop, 100k iterations of timing
-    file_test = os.path.join(path_output, fnames['ann']['test'])
+    file_test = _join(path_output, fnames['ann']['test'])
     test = pandas.read_pickle(file_test)
     t_pred = numpy.mean([time_prediction(net, test[0][:0]) for _ in range(10)])
     post['ann']['opt']['t_pred'] = t_pred
@@ -143,7 +150,7 @@ def process(cfg_project, cfg_ann):
     # one field per dataset `train`, `valid`, and `test`
     # first level `targets` if for all datasets
     post['ann']['bins'] = OrderedDict()
-    file_tune_cms = os.path.join(path_output, fnames['ann']['cms_tune'])
+    file_tune_cms = _join(path_output, fnames['ann']['cms_tune'])
 
     tune_cms = pandas.read_pickle(file_tune_cms)
     bins = tune_cms['targets']
@@ -163,7 +170,7 @@ def process(cfg_project, cfg_ann):
     str_bin = [fmt_bin.format(lo, hi) for lo, hi in zip(rho_lo, rho_hi)]
     str_lip = [fmt_lip.format(lo, hi) for lo, hi in zip(lip_lo, lip_hi)]
 
-    path_sgls = os.path.join(path_output, fnames['ann']['sgls'])
+    path_sgls = _join(path_output, fnames['ann']['sgls'])
     sgls_ann = pandas.read_pickle(path_sgls)
 
     post['ann']['bins']['values'] = list(bins)
@@ -186,8 +193,23 @@ def process(cfg_project, cfg_ann):
             post['ann']['bins']['precision'][i] = 'None'
 
     # Save post processing results as YAML
-    file_post = os.path.join(path_output, fnames['ann']['post'])
+    file_post = _join(path_output, fnames['ann']['post'])
     yamlord.write_yaml(post, file_post)
+
+    # Create dataframes with summary stats of input and output features
+    feature_cols = ['abs_depth_change',
+                    'dive_phase_int',
+                    'mean_a',
+                    'mean_depth',
+                    'mean_pitch',
+                    'mean_speed',
+                    'mean_swdensity',
+                    'total_depth_change',
+                    'total_speed_change',]
+    input_stats = input_feature_stats(sgls_ann, feature_cols)
+    target_stats = target_value_stats(train, valid, test)
+    input_stats.to_pickle(_join(path_output, 'stats_input_features.p'))
+    target_stats.to_pickle(_join(path_output, 'stats_target_value.p'))
 
     return post
 
@@ -204,9 +226,9 @@ def target_value_stats(train, valid, test):
 
     for i in range(len(ubins)):
         n = len(numpy.where(allbins==ubins[i])[0])
-        dfout.ix[i,'bin']  = ubins[i]
-        dfout.ix[i,'n']    = n
-        dfout.ix[i,'perc'] = n/len(allbins)*100
+        dfout['bin'][i] = ubins[i]
+        dfout['n'][i] = n
+        dfout['perc'][i] = n/len(allbins)*100
 
     for key in ['n', 'perc']:
         dfout[key] = pandas.to_numeric(dfout[key])
@@ -243,13 +265,13 @@ def input_feature_stats(df, feature_cols):
 
     columns = ['feature', 'min', 'max', 'mean', 'std']
     dfout = pandas.DataFrame(index=range(len(feature_cols)), columns=columns)
-    dfout.ix[:, 'feature'] = features
+    dfout['feature'][:] = features
     for i in range(len(feature_cols)):
         d = df[feature_cols[i]]
-        dfout.ix[i,'min']  = d.min()
-        dfout.ix[i,'max']  = d.max()
-        dfout.ix[i,'mean'] = d.mean()
-        dfout.ix[i,'std']  = d.std()
+        dfout['min'][i] = d.min()
+        dfout['max'][i] = d.max()
+        dfout['mean'][i] = d.mean()
+        dfout['std'][i] = d.std()
 
     for key in ['min', 'max', 'mean', 'std']:
         dfout[key] = pandas.to_numeric(dfout[key])
