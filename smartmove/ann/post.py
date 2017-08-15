@@ -208,8 +208,8 @@ def process(cfg_project, cfg_ann):
                     'total_speed_change',]
     input_stats = input_feature_stats(sgls_ann, feature_cols)
     target_stats = target_value_stats(train, valid, test)
-    input_stats.to_pickle(_join(path_output, 'stats_input_features.p'))
-    target_stats.to_pickle(_join(path_output, 'stats_target_value.p'))
+    input_stats.to_pickle(_join(path_output, fnames['ann']['stats_features']))
+    target_stats.to_pickle(_join(path_output, fnames['ann']['stats_targets']))
 
     return post
 

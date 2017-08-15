@@ -56,16 +56,18 @@ fnames:
     mask_sgls_filt:  mask_sgls_filt.p
     ctd:             kaldfjorden2016_inner.mat
   ann:
-    cfg_ann:  cfg_ann.yml
-    sgls:     data_sgls.p
-    train:    data_train.p
-    valid:    data_valid.p
-    test:     data_test.p
-    cms_tune: cms_tune.p
-    cms_data: cms_data.p
-    tune:     results_tuning.p
-    dataset:  results_dataset_size.p
-    post:     postprocessing.yml
+    cfg_ann:         cfg_ann.yml
+    sgls:            data_sgls.p
+    train:           data_train.p
+    valid:           data_valid.p
+    test:            data_test.p
+    cms_tune:        cms_tune.p
+    cms_data:        cms_data.p
+    tune:            results_tuning.p
+    dataset:         results_dataset_size.p
+    post:            postprocessing.yml
+    stats_features:  stats_input_features.p
+    stats_targets:   stats_target_values.p
 
 # Parameters for field experiment
 experiment:    
