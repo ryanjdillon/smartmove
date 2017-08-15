@@ -229,7 +229,8 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
         sym_fnames = [fname_tag, fname_mask_tag, fname_mask_tag_glides,
                       fname_mask_tag_sgls, fname_sgls]
         for out_path, fname in zip(out_paths, sym_fnames):
-            utils.symlink(_join(out_path, fname), _join(out_filt, fname))
+            relpath = os.path.relpath(_join(out_path, fname), out_filt)
+            utils.symlink(rel_path, _join(out_filt, fname))
 
         # Save sub-glide analysis configuration
         cfg_filt['last_modified'] = _now_str()
