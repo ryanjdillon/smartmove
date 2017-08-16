@@ -71,7 +71,8 @@ class Analysis(object):
 
         ann_analyses = list()
         path_ann = _join(self.path_project, paths['ann'])
-        for p in os.listdir(path_ann):
+        analyses = sorted(os.listdir(path_ann))
+        for p in analyses:
             if os.path.isdir(_join(path_ann, p)):
                 ann_analyses.append(p)
 
