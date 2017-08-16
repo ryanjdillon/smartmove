@@ -53,13 +53,11 @@ def process(path_project, path_analysis, cfg_ann):
         post['exp'][a]['min_rhomod'] = field[mask]['rho_mod'].min()
         post['exp'][a]['max_rhomod'] = field[mask]['rho_mod'].max()
 
-        # lipid range for each seal
-
         # Isotope experiment values
         post['iso'][a] = OrderedDict()
-        mask = isotope['animal'] == a
-        min_mass = isotope[mask]['mass_kg'].min()
-        max_mass = isotope[mask]['mass_kg'].max()
+        mask = isotope['animal'] == a.capitalize()
+        post['iso'][a]['min_mass'] = isotope[mask]['mass_kg'].min()
+        post['iso'][a]['max_mass'] = isotope[mask]['mass_kg'].max()
 
     # ANN CONFIG
     results = pandas.read_pickle(_join(path_output, fnames['ann']['tune']))
@@ -82,12 +80,12 @@ def process(path_project, path_analysis, cfg_ann):
     post['ann']['n']['train'] = len(train[0])
     post['ann']['n']['valid'] = len(valid[0])
     post['ann']['n']['test'] = len(test[0])
-    post['ann']['n']['all'] = len(train) + len(valid) + len(test)
+    post['ann']['n']['all'] = len(train[0]) + len(valid[0]) + len(test[0])
 
     # percentage of compiled dataset in train, valid, test
-    post['ann']['n']['perc_train'] = len(train)/post['ann']['n']['all']
-    post['ann']['n']['perc_valid'] = len(valid)/post['ann']['n']['all']
-    post['ann']['n']['perc_test'] = len(test)/post['ann']['n']['all']
+    post['ann']['n']['perc_train'] = len(train[0])/post['ann']['n']['all']
+    post['ann']['n']['perc_valid'] = len(valid[0])/post['ann']['n']['all']
+    post['ann']['n']['perc_test'] = len(test[0])/post['ann']['n']['all']
 
     # Total tuning time
     post['ann']['total_train_time'] = results['train_time'].sum()
@@ -150,15 +148,15 @@ def process(path_project, path_analysis, cfg_ann):
     # Range of each bin, density, lipid percent
     bin_range = range(len(bins)-1)
 
-    rho_hi = numpy.array([bins[i] for i in bin_range])
-    rho_lo = numpy.array([bins[i+1] for i in bin_range])
+    rho_lo = numpy.array([bins[i] for i in bin_range])
+    rho_hi = numpy.array([bins[i+1] for i in bin_range])
     # Note density is converted from kg/m^3 to g/cm^3 for `dens2lip`
-    lip_hi = pyotelem.physio_seal.dens2lip(rho_hi*0.001)['perc_lipid'].values
     lip_lo = pyotelem.physio_seal.dens2lip(rho_lo*0.001)['perc_lipid'].values
+    lip_hi = pyotelem.physio_seal.dens2lip(rho_hi*0.001)['perc_lipid'].values
 
     # Generate bin ranges as strings
     fmt_bin = r'{:7.2f} <= rho_mod < {:7.2f}'
-    fmt_lip = r'{:6.2f} <= lipid % < {:6.2f}'
+    fmt_lip = r'{:6.2f} >= lipid % > {:6.2f}'
     str_bin = [fmt_bin.format(lo, hi) for lo, hi in zip(rho_lo, rho_hi)]
     str_lip = [fmt_lip.format(lo, hi) for lo, hi in zip(lip_lo, lip_hi)]
 
