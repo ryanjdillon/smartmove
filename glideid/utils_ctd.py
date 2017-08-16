@@ -1,9 +1,9 @@
-def read_matlab(ctd_mat_file):
+def read_matlab(file_ctd_mat):
     '''Read IMR matlab CTD transect file to python dictionary
 
     Args
     ----
-    ctd_mat_file: str
+    file_ctd_mat: str
         full path and name of IMR CTD Matlab file
 
     Returns
@@ -14,7 +14,7 @@ def read_matlab(ctd_mat_file):
     from collections import OrderedDict
     import scipy.io
 
-    mat = scipy.io.loadmat(ctd_mat_file)
+    mat = scipy.io.loadmat(file_ctd_mat)
     keys = sorted(list(mat.keys()))
 
     # Assign not meta fields to separate dicts for transects
@@ -244,25 +244,26 @@ def get_seawater_densities(file_ctd_mat, t, lon, lat, max_depth):
     return gsw.rho(SA, t, p)
 
 
-if __name__ == '__main__':
+def run_ctd(path_project):
     import os
-
     import yamlord
 
+    from ..config import paths, fnames
+
     # Study location and max depth
-    # 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
-    lat = 69.69941666666666
-    lon = 18.65125
-    max_depth = 18 # meters
+    file_cfg_project = os.path.join(path_project, fnames['cfg']['project'])
+    cfg_project = yamlord.read_yaml(file_cfg_project)
+
+    # Project coords 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
+    lat = cfg_project['experiment']['lat']
+    lon = cfg_project['experiment']['lon']
+    net_depth = cfg_project['experiment']['net_depth']
 
     ## Read data
-    #cfg_path = './cfg_paths.yml'
-    #paths = yamlord.read_yaml(cfg_path)
-    #paths_ctd = os.path.join(paths['root'], path['ctd'])
-    ctd_mat_file = ('/home/ryan/Desktop/edu/01_PhD/projects/smartmove/data_coexist/'
-                   'data_ctd/kaldfjorden2016_inner.mat')
+    file_ctd_mat = os.path.join(path_project, paths['ctd'],
+                                fnames['ctd']['mat'])
 
-    transects = read_matlab(ctd_mat_file)
+    transects = read_matlab(file_ctd_mat)
 
     # Find nearest station
     transect_key, station_idx, min_dist = find_nearest_station(lon, lat, transects)
@@ -271,3 +272,5 @@ if __name__ == '__main__':
     mean_sal = calc_mean_salinity(transects, transect_key, station_idx, max_depth)
 
     plot_transect_data(transects)
+
+    return None

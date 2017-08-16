@@ -185,7 +185,7 @@ def _add_ids_to_df(df, exp_id, animal_id=None, tag_id=None):
     return df
 
 
-def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
+def _compile_experiments(path_project, path_glide, cfg_ann_data, fname_sgls,
         fname_mask_sgls_filt, manual_selection=True):
     '''Compile data from experiments into three dataframes for MCMC input'''
     import numpy
@@ -202,12 +202,6 @@ def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
     exp_ids    = list()
     animal_ids = list()
     tag_ids    = list()
-
-    print('''
-          ┌----------------------------------------------------------------┐
-          | Compiling glide analysis output to single file for model input |
-          └----------------------------------------------------------------┘
-          ''')
 
     # Iterate through experiment directories in glide analysis path
     first_iter = True
@@ -230,6 +224,7 @@ def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
     # Run manual input data path selection, else process all present paths
     path_exps = sorted(path_exps)
     if manual_selection:
+        print('')
         msg = 'path numbers to compile to single dataset.\n'
         process_ind = pyotelem.utils.get_dir_indices(msg, path_exps)
     else:
@@ -241,7 +236,7 @@ def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
 
         # Concatenate data path
         path_data_glide = os.path.join(path_project, path_glide, path_exp)
-        path_subdir = utils.get_subdir(path_data_glide, cfg)
+        path_subdir = utils.get_subdir(path_data_glide, cfg_ann_data)
         path_data_glide = os.path.join(path_data_glide, path_subdir)
 
         print('Processing {}'.format(path_exp))
@@ -291,7 +286,7 @@ def _compile_experiments(path_project, path_glide, cfg, fname_sgls,
     return exps_all, sgls_all, dives_all
 
 
-def _create_ann_inputs(cfg_ann, path_project, path_tag, path_glide, path_ann, path_csv,
+def _create_ann_inputs(path_project, cfg_ann, path_tag, path_glide, path_ann, path_csv,
         field, fname_sgls, fname_mask_sgls_filt, sgl_cols,
         manual_selection=True):
     '''Compile all experiment data for ann model input'''
@@ -377,11 +372,11 @@ def _print_dict_values(cfg_ann):
     return None
 
 
-def process(cfg_project, cfg_ann):
+def process(path_project, cfg_project, cfg_ann):
     '''Compile data with modified body density, generate output directory
 
     The ANN input data generated in this routine is saved in python pickle
-    format (binary) to the generated output directory `path_model`.
+    format (binary) to the generated output directory `path_analysis`.
 
     Args
     ----
@@ -398,41 +393,28 @@ def process(cfg_project, cfg_ann):
         A dataframe of all subglide data compiled from the glide identification
         performed by `glideid`.
     '''
-    import datetime
     import os
     import yamlord
 
     from . import utils_ann
-
-    # Set paths
-    #---------------------------------------------------------------------------
-    # Load project paths and input/output filenames
-    paths = cfg_project['paths']
-    fnames = cfg_project['fnames']
-
-    # Define output directory and create if does not exist
-    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    path_model = 'theanets_{}'.format(now)
+    from ..config import paths, fnames
 
     # Print input data configuration
     _print_dict_values(cfg_ann['data'])
 
     # Generate experiments/isotope pandas from csv
-    file_field = os.path.join(paths['project'], paths['csv'],
+    file_field = os.path.join(path_project, paths['csv'],
                               fnames['csv']['field'])
-    file_isotope = os.path.join(paths['project'], paths['csv'],
+    file_isotope = os.path.join(path_project, paths['csv'],
                                 fnames['csv']['isotope'])
 
     field, isotope = add_rhomod(file_field, file_isotope)
 
 
-    # Compile experiment data
-    #---------------------------------------------------------------------------
-    sgl_cols = cfg_ann['data']['sgl_cols'] + cfg_ann['net_all']['features']
-
     # Compile output from glides into single input dataframe
-    _, sgls, _ = _create_ann_inputs(cfg_ann,
-                                    paths['project'],
+    sgl_cols = cfg_ann['data']['sgl_cols'] + cfg_ann['net_all']['features']
+    _, sgls, _ = _create_ann_inputs(path_project,
+                                    cfg_ann,
                                     paths['tag'],
                                     paths['glide'],
                                     paths['ann'],
@@ -442,5 +424,4 @@ def process(cfg_project, cfg_ann):
                                     fnames['glide']['mask_sgls_filt'],
                                     sgl_cols,
                                     manual_selection=True)
-
-    return path_model, sgls
+    return sgls

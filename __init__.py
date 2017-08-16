@@ -12,25 +12,26 @@ def create_project(path_project):
     import shutil
     import yamlord
 
+    from .config import paths, fnames
+
     # Get path to pylleo requirements file
     module = importlib.util.find_spec('smartmove')
     module_path = os.path.split(module.origin)[0]
 
-    fname_cfg_project = 'cfg_project.yml'
-    fname_cfg_exp = 'cfg_experiments.yml'
-    fname_cfg_ann = 'cfg_ann.yml'
-    fname_cfg_glide = 'cfg_glide.yml'
-    fname_cfg_filt = 'cfg_subglide-filter.yml'
+    # Copy configuration files from `smartmove/_templates/` to `project_path`
+    fname_cfg_project = fnames['cfg']['project']
+    fname_cfg_exp = fnames['cfg']['exp_bounds']
+    fname_cfg_ann = fnames['cfg']['ann']
+    fname_cfg_glide = fnames['cfg']['glide']
+    fname_cfg_filt = fnames['cfg']['filt']
     for fname in [fname_cfg_project, fname_cfg_exp, fname_cfg_ann,
                   fname_cfg_glide, fname_cfg_filt]:
-        src = os.path.join(module_path, 'templates', fname)
+        src = os.path.join(module_path, '_templates', fname)
         dst = os.path.join(path_project, fname)
         shutil.copyfile(src, dst)
 
+    # Add creation datetime and versions to `cfg_project`
     d = yamlord.read_yaml(os.path.join(path_project, fname_cfg_project))
-    d['paths']['project'] = os.path.abspath(path_project)
-    d['paths'].move_to_end('project', last=False)
-
     d['meta'] = OrderedDict()
     d.move_to_end('meta', last=False)
     d['meta']['created'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -38,9 +39,9 @@ def create_project(path_project):
 
     yamlord.write_yaml(d, os.path.join(path_project, fname_cfg_project))
 
-    # Create paths if not existing
-    for key in d['paths'].keys():
-        p = os.path.join(path_project, d['paths'][key])
+    # Create project sub-paths if not existing
+    for key in paths.keys():
+        p = os.path.join(path_project, paths[key])
         if not os.path.isdir(p):
             os.makedirs(p, exist_ok=True)
 
@@ -48,8 +49,8 @@ def create_project(path_project):
           'You must now copy your datalogger data to the `{}` directory, '
           'the body condition `.csv` files to the `{}` directory, and the CTD '
           '`.mat` file to the `{}` directory'.format(path_project,
-                                                     d['paths']['tag'],
-                                                     d['paths']['csv'],
-                                                     d['paths']['ctd']))
+                                                     paths['tag'],
+                                                     paths['csv'],
+                                                     paths['ctd']))
 
     return None

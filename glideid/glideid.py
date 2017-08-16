@@ -7,11 +7,13 @@ presented at a body density estimation workshop at the University of Tokyo,
 Japan in May, 2016.
 '''
 
-def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
+def run(path_project, cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
     '''Run glide identification on data in configuration paths
 
     Args
     ----
+    path_project:
+        Parent path for project
     cfg_project: OrderedDict
         Dictionary of configuration parameters for the current project
     cfg_glide: OrderedDict
@@ -64,20 +66,17 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
     from pyotelem.plots import plotdynamics, plotglides
     import yamlord
 
+    from ..config import paths, fnames
     from .. import utils
     from . import utils_lleo
-
-    # Extract path and filename dictionaries from `cfg_project`
-    paths   = cfg_project['paths']
-    fnames  = cfg_project['fnames']
 
     # Input filenames
     fname_cal = fnames['tag']['cal']
     fname_cal_prop = fnames['csv']['cal_prop']
 
     # Output filenames
-    fname_cfg_glide = fnames['glide']['cfg_glide']
-    fname_cfg_filt  = fnames['glide']['cfg_filt']
+    fname_cfg_glide = fnames['cfg']['glide']
+    fname_cfg_filt  = fnames['cfg']['filt']
 
     fname_dives           = fnames['glide']['dives']
     fname_glide_ratio     = fnames['glide']['glide_ratio']
@@ -94,16 +93,16 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
 
     # Generate list of paths in tag data directory
     path_exps = list()
-    for path_exp in os.listdir(_join(paths['project'], paths['tag'])):
+    for path_exp in os.listdir(_join(path_project, paths['tag'])):
 
         # Only process directories
-        if os.path.isdir(_join(paths['project'], paths['tag'], path_exp)):
+        if os.path.isdir(_join(path_project, paths['tag'], path_exp)):
 
             path_exps.append(path_exp)
 
     # Get user selection of tag data paths to process
     path_exps = sorted(path_exps)
-    msg = 'Enter paths numbers to process:\n'
+    msg = 'paths numbers to process:\n'
     process_ind = pyotelem.utils.get_dir_indices(msg, path_exps)
 
     # Process selected tag experiments
@@ -128,16 +127,16 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
         # Run glide analysis
 
         # Output paths
-        out_data  = _join(paths['project'], paths['tag'], path_exp)
+        out_data  = _join(path_project, paths['tag'], path_exp)
         os.makedirs(out_data, exist_ok=True)
 
         # LOAD DATA
         #----------
         # linearly interpolated tag to accelerometer sensor
-        path_data_tag = _join(paths['project'], paths['tag'], path_exp)
-        file_cal_acc  = _join(paths['project'], paths['tag'],
+        path_data_tag = _join(path_project, paths['tag'], path_exp)
+        file_cal_acc  = _join(path_project, paths['tag'],
                                      path_cal_acc, fname_cal)
-        file_cal_prop = _join(paths['project'], paths['csv'],
+        file_cal_prop = _join(path_project, paths['csv'],
                                      fname_cal_prop)
 
         tag, dt_a, fs_a = utils_lleo.load_lleo(path_data_tag, file_cal_acc,
@@ -150,13 +149,14 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
 
 
         # Signal process data, calculate derived data and find stroke frequencies
-        cfg_glide_exp, tag, dives, masks, exp_ind = _process_tag_data(cfg_project,
-                                                                     cfg_glide,
-                                                                     path_exp,
-                                                                     tag,
-                                                                     fs_a,
-                                                                     plots=plots,
-                                                                     debug=debug)
+        cfg_glide_exp, tag, dives, masks, exp_ind = _process_tag_data(path_project,
+                                                                      cfg_project,
+                                                                      cfg_glide,
+                                                                      path_exp,
+                                                                      tag,
+                                                                      fs_a,
+                                                                      plots=plots,
+                                                                      debug=debug)
         # Save data
         tag.to_pickle(_join(out_data, fname_tag))
         dives.to_pickle(_join(out_data, fname_dives))
@@ -170,7 +170,7 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
 
         # Create output path from concatenating parameters in `cfg_glide_exp`
         dname_glide = utils.cat_path(cfg_glide_exp, ignore)
-        out_glide = _join(paths['project'], paths['glide'], path_exp,
+        out_glide = _join(path_project, paths['glide'], path_exp,
                           dname_glide)
         os.makedirs(out_glide, exist_ok=True)
 
@@ -225,11 +225,13 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
         pandas.to_pickle(mask_sgls_filt, _join(out_filt, fname_mask_sgls_filt))
 
         # Save symlink to data and masks in filter directory
-        out_paths = [out_data, out_data, out_glide, out_sgls, out_sgls]
-        sym_fnames = [fname_tag, fname_mask_tag, fname_mask_tag_glides,
+        out_paths = [out_data, out_data, out_glide, out_glide, out_sgls,
+                     out_sgls, out_sgls]
+        sym_fnames = [fname_tag, fname_mask_tag, fname_cfg_glide,
+                      fname_mask_tag_glides, fname_cfg_filt,
                       fname_mask_tag_sgls, fname_sgls]
         for out_path, fname in zip(out_paths, sym_fnames):
-            relpath = os.path.relpath(_join(out_path, fname), out_filt)
+            rel_path = os.path.relpath(_join(out_path, fname), out_filt)
             utils.symlink(rel_path, _join(out_filt, fname))
 
         # Save sub-glide analysis configuration
@@ -240,12 +242,14 @@ def run(cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False):
     return tag, dives, GL, sgls
 
 
-def _process_tag_data(cfg_project, cfg_glide, path_exp, tag, fs_a, plots=True,
-        debug=False):
+def _process_tag_data(path_project, cfg_project, cfg_glide, path_exp, tag,
+        fs_a, plots=True, debug=False):
     '''Calculate body conditions summary statistics
 
     Args
     ----
+    path_project:
+        Parent path for project
     cfg_project: OrderedDict
         Dictionary of configuration parameters for the current project
     cfg_glide: OrderedDict
@@ -291,13 +295,11 @@ def _process_tag_data(cfg_project, cfg_glide, path_exp, tag, fs_a, plots=True,
 
     from .. import utils
     from . import utils_ctd
-
-    paths = cfg_project['paths']
-    fnames = cfg_project['fnames']
+    from ..config import paths, fnames
 
     exp_idxs = [None, None]
 
-    file_cfg_exp  = _join(paths['project'], fnames['tag']['cfg_exp'])
+    file_cfg_exp  = _join(path_project, fnames['cfg']['exp_bounds'])
     cfg = copy.deepcopy(cfg_glide)
 
     try:
@@ -450,8 +452,8 @@ def _process_tag_data(cfg_project, cfg_glide, path_exp, tag, fs_a, plots=True,
     max_depth = cfg_project['experiment']['net_depth']
 
     # Read data
-    fname_ctd = fnames['glide']['ctd']
-    file_ctd_mat = _join(paths['project'], paths['ctd'], fname_ctd)
+    fname_ctd = cfg_project['experiment']['fname_ctd']
+    file_ctd_mat = _join(path_project, paths['ctd'], fname_ctd)
 
     t = tag['temperature'].values
 

@@ -1,20 +1,3 @@
-# Paths for use across modules
-paths:
-  # Contains datalogger data for each experiment to be analyzed
-  tag: data_tag
-  
-  # Contains `.csv` files for field and isotope experiments
-  csv: data_csv
-  
-  # Contains data from CTD measurements
-  ctd: data_ctd
-  
-  # Contains sub-glide data directories for each processed experiment
-  glide: data_glide
-  
-  # Path for ANN model input (copied) and output files
-  ann: model_ann
-
 # Datalogger calibration directories
 cal:
   # Contains acceleration calibration YAMLs for associated tag ID
@@ -28,47 +11,6 @@ cal:
       2016:
         04: 20160418_W190PD3GT_34840_Skinny_2Neutral
   
-# Filenames for use amongst modules
-fnames:
-  project:
-    cfg: cfg_project.yml
-  # Datalogger data processing
-  tag:
-    cal:       cal.yml
-    data:      pydata_{}.p
-    cfg_exp:   cfg_experiments.yml 
-  csv:
-    cal_prop:  propeller_calibrations.csv
-    field:     field_experiments.csv
-    isotope:   isotope_experiments.csv
-
-  # Glide analysis input/output
-  glide:
-    cfg_glide:       cfg_glide.yml
-    cfg_filt:        cfg_subglide-filter.yml
-    dives:           data_dives.p
-    sgls:            data_sgls.p
-    glide_ratio :    data_ratios.p
-    mask_tag:        mask_tag.p
-    mask_tag_glides: mask_tag_glides.p
-    mask_tag_sgls:   mask_tag_sgls.p
-    mask_tag_filt:   mask_tag_filt.p
-    mask_sgls_filt:  mask_sgls_filt.p
-    ctd:             kaldfjorden2016_inner.mat
-  ann:
-    cfg_ann:         cfg_ann.yml
-    sgls:            data_sgls.p
-    train:           data_train.p
-    valid:           data_valid.p
-    test:            data_test.p
-    cms_tune:        cms_tune.p
-    cms_data:        cms_data.p
-    tune:            results_tuning.p
-    dataset:         results_dataset_size.p
-    post:            postprocessing.yml
-    stats_features:  stats_input_features.p
-    stats_targets:   stats_target_values.p
-
 # Parameters for field experiment
 experiment:    
   # 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
@@ -76,5 +18,4 @@ experiment:
     lon: 18.65125
     lat: 69.69942
   net_depth: 18 #meters
-
-ann_analyses: []
+  fname_ctd: 'kaldfjorden2016_inner.mat'

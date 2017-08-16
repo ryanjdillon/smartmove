@@ -17,7 +17,7 @@ def calculate_precision(cm):
     return precision
 
 
-def process(cfg_project, cfg_ann):
+def process(path_project, path_analysis, cfg_ann):
     from collections import OrderedDict
     import numpy
     import os
@@ -26,20 +26,13 @@ def process(cfg_project, cfg_ann):
     import yamlord
 
     from . import pre
+    from ..config import paths, fnames
 
-    paths = cfg_project['paths']
-    fnames = cfg_project['fnames']
+    print(path_analysis)
+    path_output = _join(path_project, paths['ann'], path_analysis)
 
-    path_output = _join(paths['project'], paths['ann'],
-                               cfg_project['ann_analyses'][-1])
-
-    fname_field = fnames['csv']['field']
-    fname_isotope = fnames['csv']['isotope']
-
-    file_field = _join(paths['project'], paths['csv'],
-                              fnames['csv']['field'])
-    file_isotope = _join(paths['project'], paths['csv'],
-                                fnames['csv']['isotope'])
+    file_field = _join(path_project, paths['csv'], fnames['csv']['field'])
+    file_isotope = _join(path_project, paths['csv'], fnames['csv']['isotope'])
     field, isotope = pre.add_rhomod(file_field, file_isotope)
 
     # EXPERIMENT INPUT
@@ -76,9 +69,7 @@ def process(cfg_project, cfg_ann):
     # Number of network configurations
     post['ann']['n_configs'] = len(results)
 
-    # Number of samples compiled, train, valid, test
-    post['ann']['n'] = OrderedDict()
-
+    # Load training data
     file_train = _join(path_output, 'data_train.p')
     file_valid = _join(path_output, 'data_valid.p')
     file_test = _join(path_output, 'data_test.p')
@@ -86,16 +77,17 @@ def process(cfg_project, cfg_ann):
     valid = pandas.read_pickle(file_valid)
     test = pandas.read_pickle(file_test)
 
-    for set_name in ['train', 'valid', 'test']:
-        post['ann']['n'][set_name] = len(data[0])
-
-    n_all = sum([n for n in post['ann']['n'].values()])
-    post['ann']['n']['all'] = n_all
+    # Number of samples compiled, train, valid, test
+    post['ann']['n'] = OrderedDict()
+    post['ann']['n']['train'] = len(train[0])
+    post['ann']['n']['valid'] = len(valid[0])
+    post['ann']['n']['test'] = len(test[0])
+    post['ann']['n']['all'] = len(train) + len(valid) + len(test)
 
     # percentage of compiled dataset in train, valid, test
-    for set_name in ['train', 'valid', 'test']:
-        n_set = post['ann']['n'][set_name]
-        post['ann']['n']['perc_{}'.format(set_name)] = n_set/n_all
+    post['ann']['n']['perc_train'] = len(train)/post['ann']['n']['all']
+    post['ann']['n']['perc_valid'] = len(valid)/post['ann']['n']['all']
+    post['ann']['n']['perc_test'] = len(test)/post['ann']['n']['all']
 
     # Total tuning time
     post['ann']['total_train_time'] = results['train_time'].sum()

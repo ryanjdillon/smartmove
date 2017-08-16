@@ -256,12 +256,6 @@ def create_algorithm(train, valid, config, n_features, n_targets, plots=False):
     kwargs = {'train':train,
               'valid':valid,
               'algo':config['algorithm'],
-              #'patience':config['patience'],
-              #'min_improvement':config['min_improvement'],
-              #'validate_every':config['validate_every'],
-              #'batch_size':batch_size,
-              #'train_batches':train_batches,
-              #'valid_batches':valid_batches,
               'learning_rate':config['learning_rate'],
               'momentum':config['momentum'],
               'hidden_l1':config['hidden_l1'],
@@ -276,10 +270,6 @@ def create_algorithm(train, valid, config, n_features, n_targets, plots=False):
 
     if plots == True:
         plot_monitors(attrs, monitors['train'], monitors['valid'])
-
-    # Run with `train` wrapper of `itertrain`
-    #else:
-    #    net.train(**kwargs)
 
     # Classify features against label/target value to get accuracy
     # where `valid` is a tuple with validation (features, label)
@@ -377,7 +367,7 @@ def _tune_net(train, valid, test, targets, configs, n_features, n_targets, plots
 
 
 def _test_dataset_size(best_config, train, valid, test, targets, n_features,
-        n_targets, plots):
+        n_targets, plots, debug):
     '''Train nets with best configuration and varying dataset sizes
 
     Args
@@ -445,16 +435,19 @@ def _test_dataset_size(best_config, train, valid, test, targets, n_features,
 
     subset_fractions = (numpy.arange(0,1,0.03))[1:]
     results_dataset = pandas.DataFrame(index=range(len(subset_fractions)),
-                                    columns=data_cols, dtype=object)
+                                       columns=data_cols, dtype=object)
 
     # Generate net and save results for each data subset
     for i in range(len(subset_fractions)):
 
-        # Trim data sets to `frac` of original
-        train_frac = _truncate_data(train, subset_fractions[i])
+        print('subset fraction', subset_fractions[i])
+        if debug:
+            subset_fraction = 1.0
+        else:
+            subset_fraction = subset_fractions[i]
 
-        #valid_frac = _truncate_data(valid, subset_fractions[i])
-        #test_frac  = _truncate_data(test, subset_fractions[i])
+        # Trim data sets to `frac` of original
+        train_frac = _truncate_data(train, subset_fraction)
         valid_frac = valid
         test_frac = test
 
@@ -467,7 +460,7 @@ def _test_dataset_size(best_config, train, valid, test, targets, n_features,
         results_dataset['config'][i]      = best_config
         results_dataset['net'][i]         = net
         results_dataset['accuracy'][i]    = accuracy
-        results_dataset['subset_frac'][i] = subset_fractions[i]
+        results_dataset['subset_frac'][i] = subset_fractions
         results_dataset['train_time'][i]  = t1 - t0
         results_dataset['monitors'][i]    = monitors
         results_dataset['n_train'][i]     = len(train_frac[0])
@@ -487,7 +480,8 @@ def _test_dataset_size(best_config, train, valid, test, targets, n_features,
     return results_dataset, test_accuracy, cms
 
 
-def run(cfg_project, cfg_ann, plots=False, debug=False):
+def run(path_project, path_analysis, cfg_project, cfg_ann, sgls_all,
+        plots=False, debug=False):
     '''
     Compile subglide data, tune network architecture and test dataset size
 
@@ -530,13 +524,9 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
     import yamlord
 
     from . import utils_ann
-    from . import pre
-    from . import post
 
     from .utils_ann import ppickle
-
-    paths = cfg_project['paths']
-    fnames = cfg_project['fnames']
+    from ..config import paths, fnames
 
     # Environment settings - logging, Theano, load configuration, set paths
     #---------------------------------------------------------------------------
@@ -548,10 +538,8 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
         for key in cfg_ann['net_tuning'].keys():
             cfg_ann['net_tuning'][key] = [cfg_ann['net_tuning'][key][0],]
 
-    # Load data from pre-processing
-    path_model, sgls = pre.process(cfg_project, cfg_ann)
-    sgls = sgls.dropna()
-    cfg_project['ann_analyses'].append(path_model)
+    # Drop fields missing values
+    sgls_nonan = sgls_all.dropna()
 
     print('\nSplit and normalize input/output data')
     features   = cfg_ann['net_all']['features']
@@ -560,7 +548,7 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
     valid_frac = cfg_ann['net_all']['valid_frac']
 
     # Normalize input (features) and output (target)
-    nsgls, bins = _normalize_data(sgls, features, target, n_targets)
+    nsgls, bins = _normalize_data(sgls_nonan, features, target, n_targets)
 
     # Get indices of train, validation and test datasets
     ind_train, ind_valid, ind_test = _split_indices(nsgls, valid_frac)
@@ -618,6 +606,7 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
                                                                   n_features,
                                                                   n_targets,
                                                                   plots,
+                                                                  debug
                                                                   )
 
     print('\nTest data accuracy (Configuration tuning): {}'.format(tune_accuracy))
@@ -628,20 +617,18 @@ def run(cfg_project, cfg_ann, plots=False, debug=False):
     #---------------------------------------------------------------------------
 
     # Create output directory if it does not exist
-    path_output = os.path.join(paths['project'], paths['ann'],
-                               path_model)
+    path_output = os.path.join(path_project, paths['ann'], path_analysis)
     os.makedirs(path_output, exist_ok=True)
 
-    # Save updated `cfg_project` to project directory
-    file_cfg_project = os.path.join(paths['project'], fnames['project']['cfg'])
-    yamlord.write_yaml(cfg_project, os.path.join(path_output, file_cfg_project))
-
     # Save updated `cfg_ann` to output directory
-    file_cfg_ann = os.path.join(path_output, fnames['ann']['cfg_ann'])
+    file_cfg_ann = os.path.join(path_output, fnames['cfg']['ann'])
     yamlord.write_yaml(cfg_ann, os.path.join(path_output, file_cfg_ann))
 
-    # Compiled SGLs after NaN drop
-    utils_ann.ppickle(nsgls, os.path.join(path_output, fnames['ann']['sgls']))
+    # Compiled SGLs before NaN drop and normalization
+    utils_ann.ppickle(sgls_all, os.path.join(path_output, fnames['ann']['sgls']))
+
+    # Compiled SGLs after NaN drop and normalization
+    utils_ann.ppickle(nsgls, os.path.join(path_output, fnames['ann']['sgls_norm']))
 
     # Save output data to analysis output directory
     tune_fname = fnames['ann']['tune']
