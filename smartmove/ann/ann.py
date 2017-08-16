@@ -61,9 +61,6 @@ def _normalize_data(df, features, target, n_targets):
         # Theno messes up when digits don't correspond with python indexing
         ybins = numpy.digitize(y, bins)-1
 
-        # Remove buffer bin before returning
-        bins = bins[:n_targets]
-
         return ybins, bins
 
     # Normalize inputs
@@ -313,7 +310,10 @@ def _tune_net(train, valid, test, targets, configs, n_features, n_targets, plots
     test: tuple (ndarray, ndarray)
         Tuple containing feature and target values for testing
     targets: ndarray
-        List of unique targets (bins) generated during data splitting
+        List of unique targets (bins) generated during data splitting. This
+        list contains `n_targets`+1 values in order to define the upper
+        boundary of the last bin. The `_normalize_data()` routine which
+        generates the bins assigns values only to the first `n_targets` bins.
     configs: dict
         Dictionary of all permutation of network configuration parameters
         defined in `cfg_ann.yml` file
