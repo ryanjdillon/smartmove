@@ -33,9 +33,9 @@ def calc_mod_density(mass_kg, dens_kgm3, n_blocks, block_type):
         L:150mm, W:40mm, H:30mm (41, 29)
         shaved 45deg on all edges, 5.5 mm from edge
 
-      Volume float           - 0.000174510114214 m³
-      Mass float             - 0.034 kg
-      Mass float w/sailcloth - 0.042 kg
+      Volume float           - 0.000174510114214 m³ (1.75e-4)
+      Mass float             - 0.034 kg (0.34e-1)
+      Mass float w/sailcloth - 0.042 kg (0.43e-1)
 
     WEIGHT AND NEUTRAL:
       Neutral and weight blocks were made from PE plastic with 2 16mm diameter
@@ -56,19 +56,22 @@ def calc_mod_density(mass_kg, dens_kgm3, n_blocks, block_type):
       Weight rod dimensions (one rod per hole):
         L:140mm, D:15mm
 
-      Mass block w/holes   - 0.118 kg
-      Mass weight bar      - 0.260 kg
-      Mass weight block    - 0.118 kg + 2(0.260 kg) = 0.638 kg
-      Volume block w/holes - 0.00012016274768 m³
-      Volume weight bar    - 0.00000176714586764 m³
-      Volume weight+2bars  - 1.202e-4 + 2(1.767e-6) = 1.237e-4
+      Mass block w/holes   - 0.118 kg (1.18e-1)
+      Mass weight bar      - 0.260 kg (2.60e-1)
+      Mass weight block    - 0.118 kg + 2(0.260 kg) = 0.638 kg (6.38e-1)
+      Volume block w/holes - 0.00012016274768 m³ (1.20e-4)
+      Volume weight bar    - 0.00000176714586764 m³ (1.77e-6)
+      Volume weight+2bars  - 1.20e-4 + 2(1.77e-6) = 1.24e-4
 
       4 weight tubes = 2 weights
     '''
 
     # Modifier block attributes
     block_types = ['weight', 'float', 'neutral']
-    mod_vol_m3 = {'weight':1.237e-4, 'float':1.745e-4, 'neutral':1.202e-4}
+    # NOTE corrections to significant figures, leaving old for reference
+    #mod_vol_m3 = {'weight':1.237e-4, 'float':1.745e-4, 'neutral':1.202e-4}
+    #mod_mass_kg = {'weight': 0.638,  'float': 0.034, 'neutral':0.118}
+    mod_vol_m3 = {'weight':1.24e-4, 'float':1.75e-4, 'neutral':1.20e-4}
     mod_mass_kg = {'weight': 0.638,  'float': 0.034, 'neutral':0.118}
 
     seal_vol_m3 = mass_kg / dens_kgm3
@@ -84,9 +87,9 @@ def calc_mod_density(mass_kg, dens_kgm3, n_blocks, block_type):
 
     # Raise error if incorrect `block_type` passed
     else:
-        print(block_type)
-        raise KeyError("`block_type` must be 'weight', 'float', or 'neutral'")
-
+        block_string = ', '.join(block_types)
+        raise KeyError("`block_type` must be: {} "
+                       "- not {}".format(block_types, block_type))
     return rho_mod
 
 
