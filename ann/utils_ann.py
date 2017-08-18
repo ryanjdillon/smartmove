@@ -8,8 +8,9 @@ def ppickle(obj, file_path):
     return None
 
 
-def plot_confusion_matrix(cm, targets, normalize=False, title='', cmap=None,
-        xlabel_rotation=0):
+def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
+        ylabel='Observed', normalize=False, title='', cmap=None,
+        xlabel_rotation=0, path_plot=None):
     '''This function prints and plots the confusion matrix.
 
     Normalization can be applied by setting `normalize=True`.
@@ -19,38 +20,69 @@ def plot_confusion_matrix(cm, targets, normalize=False, title='', cmap=None,
     import itertools
     import matplotlib.pyplot as plt
     import numpy
+    import os
 
+    from ..visuals import latex
+    from ..visuals import utils
+
+    # Set colomap if not passed
     if cmap is None:
         cmap = plt.cm.PuBuGn
 
+    # Create normalized
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, numpy.newaxis]
-        print('\n{}, normalized'.format(title))
-    else:
-        print('\n{}, without normalization'.format(title))
 
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar(label='Number of predictions')
-    n_targets = len(targets)
-    yticks = numpy.arange(n_targets)
-    xticks = yticks #- (numpy.diff(yticks)[0]/3)
-    plt.xticks(xticks, numpy.round(targets, 1), rotation=xlabel_rotation)
-    plt.yticks(yticks, numpy.round(targets,1))
+    # Creat matrix plot from confusion matric
+    fig, ax = plt.subplots()
+    cm_mag = utils.magnitude(cm.max())
+    cm_max = utils.roundup(int(cm.max()), cm_mag)
+    img = ax.imshow(cm, interpolation='nearest', cmap=cmap, vmin=0,
+                    vmax=cm_max)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
 
-    print(cm)
+    # Turn off grid (overide `seaborn`)
+    ax.grid(False)
 
+    # Create color bar and update ticks
+    cb = fig.colorbar(img, label='Number predicted')
+    cb_labels = cb.ax.get_yticklabels()
+    cb_labels = numpy.linspace(0, cm_max, len(cb_labels)).astype(int)
+    cb.ax.set_yticklabels(cb_labels)
+
+    # Configure matrix ticks
+    tick_marks = numpy.arange(len(tick_labels))
+    ax.set_xticks(tick_marks)
+    ax.set_yticks(tick_marks)
+    ax.set_xticklabels(tick_labels, rotation=xlabel_rotation)
+    ax.set_yticklabels(tick_labels)
+
+    # Draw annotations with varying colors given `thresh`
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-        plt.text(j, i, cm[i, j],
-                 horizontalalignment='center',
-                 color='white' if cm[i, j] > thresh else 'black')
+        ax.text(j, i, cm[i, j],
+                horizontalalignment='center',
+                color='white' if cm[i, j] > thresh else 'black')
 
-    plt.ylabel('Observed bin')
-    plt.xlabel('Predicted bin')
     plt.tight_layout()
     plt.show()
 
+    # Save plot
+    if path_plot is not None:
+        fname = 'confusion-matrix'
+        ext = 'eps'
+        if normalize:
+            fname += '_normalized'
+
+        file_path = os.path.join(path_plot, '{}.{}'.format(fname, ext))
+        plt.savefig(file_path, format=ext, bbox_inches='tight')
+
+        # TODO perhaps move out of latex to image utils repo, perform all in
+        # analysis
+        latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
+                               dpi='600')
     return None
 
 
@@ -60,6 +92,8 @@ def get_confusion_matrices(net, train, valid, targets, plots=True):
     import numpy
     import sklearn.metrics
 
+    # TODO separate plot from this routine, and dict creation, perform in
+    # calling routine
 
     # Show confusion matrices on the training/validation splits.
     cms = OrderedDict()
@@ -77,10 +111,3 @@ def get_confusion_matrices(net, train, valid, targets, plots=True):
             plot_confusion_matrix(cms[label]['cm'], cms[label]['targets'], title=title)
 
     return cms
-
-
-def n_hidden(n_input, n_output, n_train_samples, alpha):
-    # http://stats.stackexchange.com/a/136542/16938
-    # Alpha is scaling factor between 2-10
-    n_hidden = n_samples/(alpha*(n_input+n_output))
-    return n_hidden

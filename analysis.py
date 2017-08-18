@@ -176,3 +176,10 @@ class Analysis(object):
         self._update_ann_data()
 
         return None
+
+    def run_visuals(self):
+        from . import visuals
+
+        visuals.make(self.path_project, self.current_ann)
+
+        return None

@@ -56,7 +56,5 @@ fnames = {
         'tune':           'results_tuning.p',
         'dataset':        'results_dataset_size.p',
         'post':           'postprocessing.yml',
-        'stats_features': 'stats_input_features.p',
-        'stats_targets':  'stats_target_values.p',
         },
     }
