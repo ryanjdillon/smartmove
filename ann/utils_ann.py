@@ -66,9 +66,6 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
                 horizontalalignment='center',
                 color='white' if cm[i, j] > thresh else 'black')
 
-    plt.tight_layout()
-    plt.show()
-
     # Save plot
     if path_plot is not None:
         fname = 'confusion-matrix'
@@ -79,10 +76,9 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
         file_path = os.path.join(path_plot, '{}.{}'.format(fname, ext))
         plt.savefig(file_path, format=ext, bbox_inches='tight')
 
-        # TODO perhaps move out of latex to image utils repo, perform all in
-        # analysis
-        latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
-                               dpi='600')
+    plt.tight_layout()
+    plt.show()
+
     return None
 
 

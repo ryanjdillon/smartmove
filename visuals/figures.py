@@ -276,6 +276,7 @@ def make_all(path_project, path_analysis):
     from ..ann import utils_ann
     from ..config import paths, fnames
     from . import utils
+    from . import latex
 
     # Create output path for plots
     path_plot = _join(path_project, 'paper/figures')
@@ -318,4 +319,11 @@ def make_all(path_project, path_analysis):
                                     ylabel=ylabel, normalize=False, title='',
                                     cmap=None, xlabel_rotation=45,
                                     path_plot=path_plot)
+
+    for fig in os.listdir(path_plot):
+        if fig.endswith('.eps'):
+            # Convert eps to png
+            fname = os.path.splitext(fig)[0]
+            latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
+                                   dpi='300')
     return None

@@ -1,5 +1,5 @@
 
-def compile_latex(path, fname, debug):
+def compile_latex(path, fname, debug, dpi=300):
     '''Compile LaTeX table to pdf image
 
     http://tex.stackexchange.com/a/209227/33219

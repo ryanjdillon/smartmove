@@ -249,6 +249,8 @@ def make_all(path_project, path_analysis):
     # Create isotope experiments table
     ignore_isotope = ['length', 'girth', 'contributer1', 'contributer2', 'notes']
     name_isotope   = table_isotope.__name__
+    # TODO remove once data cleaned
+    isotope = isotope[~numpy.isnan(isotope['id'])]
     isotope = utils.filter_dataframe(isotope, ignore_isotope)
     table_isotope(name_isotope, table_attrs[name_isotope], path_table, isotope)
 
