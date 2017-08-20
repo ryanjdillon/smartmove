@@ -267,6 +267,106 @@ def plot_learning_curves(m, path_plot=None):
     return None
 
 
+def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None,
+        show=False):
+    '''Plot density of subglides over time for whole exp, des, and asc'''
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import numpy
+
+    # TODO add A/ B, bottom left
+    # TODO move textbox bottom right
+    # TODO set limits for density the same
+    # TODO Update xaxis, units time elapsed
+    # TODO save as svg
+
+    # Make jointplots as subplots
+    # http://stackoverflow.com/a/35044845/943773
+
+    sns.set(style="white", color_codes=True)
+
+    fig = plt.figure()
+
+    # time, mid between start and finish
+    sgl_x = sgls['start_idx'] + ((sgls['stop_idx']-sgls['start_idx'])/2)
+
+    # depth, calc avg over sgl time
+    sgl_y = sgls['mean_depth']
+
+    g = sns.jointplot(x=sgl_x, y=sgl_y, kind='hex', stat_func=None)
+
+    g.fig.axes[0].set_ylim(0, max_depth)
+    g.fig.axes[0].invert_yaxis()
+    g.set_axis_labels(xlabel='Time', ylabel='Depth (m)')
+
+    ## TODO add colorbar
+    ## http://stackoverflow.com/a/29909033/943773
+    #cax = g.fig.add_axes([1, 0.35, 0.01, 0.2])
+    #plt.colorbar(cax=cax)
+
+    # Add text annotation top left if `textstr` passed
+    if textstr:
+        props = dict(boxstyle='round', facecolor='grey', alpha=0.1)
+        g.fig.axes[0].text(0.05, 0.20, textstr, transform=g.fig.axes[0].transAxes,
+                           fontsize=14, verticalalignment='top', bbox=props)
+
+    if path_plot:
+        ext = 'eps'
+        fname_plot_sgl = 'heatmap_{}.{}'.format(exp_id, ext)
+        file_plot_sgl = _join(path_plot, fname_plot_sgl)
+        g.savefig(filename=file_plot_sgl)
+
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+    return None
+
+
+def plot_all_sgl_densities(path_project, cfg_ann, path_plot, show=False):
+    import os
+    import pandas
+
+    from .. import utils
+    from ..config import paths, fnames
+
+    # Get list of paths filtered by parameters in `cfg_ann['data']`
+    path_tag = _join(path_project, paths['tag'])
+    path_glide = _join(path_project, paths['glide'])
+    data_paths = list()
+    exp_ids = list()
+    for p in os.listdir(path_tag):
+        path_exp = _join(path_tag, p)
+        if os.path.isdir(path_exp):
+            # Concatenate data path
+            path_glide_data = _join(path_project, path_glide, p)
+            path_subdir = utils.get_subdir(path_glide_data, cfg_ann['data'])
+            data_paths.append(_join(path_glide_data, path_subdir))
+            exp_ids.append(p)
+
+    for p, exp_id in zip(data_paths, exp_ids):
+        year   = exp_id[:4]
+        month  = exp_id[4:6]
+        day    = exp_id[6:8]
+        animal = exp_id.split('_')[3].lower()
+        mod    = ' '.join(exp_id.split('_')[4:])
+
+        fname_tag = fnames['tag']['data'].format(exp_id)
+        tag = pandas.read_pickle(_join(p, fname_tag))
+        sgls = pandas.read_pickle(_join(p, fnames['glide']['sgls']))
+        fname_mask_sgls_filt = fnames['glide']['mask_sgls_filt']
+        mask_sgls = pandas.read_pickle(_join(p, fname_mask_sgls_filt))
+
+        textstr = ('{}-{}-{}\n'
+                   '{}\n'
+                   '{}').format(year, month, day, animal, mod)
+
+        sgl_density(exp_id, sgls[mask_sgls], max_depth=20, textstr=textstr,
+                    path_plot=path_plot, show=show)
+    return None
+
+
 def make_all(path_project, path_analysis):
     import os
     import pandas
@@ -305,6 +405,7 @@ def make_all(path_project, path_analysis):
     m = utils.last_monitors(results_dataset)
     plot_learning_curves(m, path_plot)
 
+    # Plot confusion matrix
     # TODO CM key named validation in smartmove, should change with refactoring
     file_cms_data = _join(path_output, fnames['ann']['cms_tune'])
     cms_tune = pandas.read_pickle(file_cms_data)
@@ -320,6 +421,11 @@ def make_all(path_project, path_analysis):
                                     cmap=None, xlabel_rotation=45,
                                     path_plot=path_plot)
 
+
+    # Plot subglide heatmaps
+    plot_all_sgl_densities(path_project, cfg_ann, path_plot)
+
+    # Convert all `.eps` images to `.png`
     for fig in os.listdir(path_plot):
         if fig.endswith('.eps'):
             # Convert eps to png
