@@ -1,57 +1,67 @@
 
-def compile_latex(path, fname, debug, dpi=300):
+def compile_latex(path, fname, out_ext=None, dpi=300):
     '''Compile LaTeX table to pdf image
 
     http://tex.stackexchange.com/a/209227/33219
     '''
+    from contextlib import contextmanager
+    from PIL import Image
     import os
     import subprocess
+
+    @contextmanager
+    def cd(newdir):
+        prevdir = os.getcwd()
+        os.chdir(os.path.expanduser(newdir))
+        try:
+            yield
+        finally:
+            os.chdir(prevdir)
 
     # Call pdflatex from shell to compile .tex table to pdf document
     # pdflatex '\documentclass{article}\usepackage{array}\begin{document}\'
     #          'pagenumbering{gobble}\input{'+fname+'}\end{document}'
 
-    cwd = os.getcwd()
-    os.chdir(path)
+    with cd(path):
 
-    if debug: print('creating latex')
+        cmd = ['pdflatex',
+               (r'\documentclass{article}'
+                r'\usepackage{changepage}'
+                r'\usepackage[landscape]{geometry}'
+                r'\usepackage{mathtools}'
+                r'\usepackage{gensymb}'
+                r'\usepackage{array}'
+                r'\usepackage[usenames, dvipsnames]{color}'
+                r'\begin{document}'
+                r'\pagenumbering{gobble}'
+                r'\input{'+fname+'}'
+                r'\end{document}')
+               ]
+        subprocess.run(cmd, stdout=subprocess.PIPE)
 
-    cmd = ['pdflatex',
-           (r'\documentclass{article}'
-            r'\usepackage{changepage}'
-            r'\usepackage{mathtools}'
-            r'\usepackage{gensymb}'
-            r'\usepackage{array}'
-            r'\usepackage[usenames, dvipsnames]{color}'
-            r'\begin{document}'
-            r'\pagenumbering{gobble}'
-            r'\input{'+fname+'}'
-            r'\end{document}')
-           ]
-    subprocess.run(cmd, stdout=subprocess.PIPE)
+        # Crop whitespace from table
+        #pdfname = 'article.pdf'
+        #cmd = ['pdfcrop', pdfname, pdfname]
+        #subprocess.run(cmd, stdout=subprocess.PIPE)
 
-    # Crop whitespace from table
-    if debug: print('remove whitespace')
+        # Rename latex output to match filename
+        os.renames('article.pdf', fname+'.pdf')
 
-    pdfname = 'article.pdf'
-    cmd = ['pdfcrop', pdfname, pdfname]
-    subprocess.run(cmd, stdout=subprocess.PIPE)
+        # Remove compilation files by extension
+        for f in os.listdir('./'):
+            if any(f.endswith(ext) for ext in ['.aux', '.log']):
+                os.remove(f)
 
-    # Rename latex output to match filename
-    if debug: print('rename pdf')
-    os.renames('article.pdf', fname+'.pdf')
+        # Convert pdf to png image
+        if out_ext:
+            in_ext = 'pdf'
+            pdf_to_img(path, fname, in_ext=in_ext, out_ext=out_ext, dpi=dpi)
 
-    # Remove compilation files by extension
-    if debug: print('remove .aux .log')
-    for f in os.listdir('./'):
-        if any(f.endswith(ext) for ext in ['.aux', '.log']):
-            os.remove(f)
-
-    # Convert pdf to png image
-    if debug: print('convert pdf to png')
-    pdf_to_img(path, fname, in_ext='pdf', out_ext='png', dpi=300)
-
-    os.chdir(cwd)
+            # Crop 'png'
+            file_im = os.path.join(path,'{}.{}'.format(fname, out_ext))
+            im = Image.open(file_im, 'r')
+            im2 = im.crop(im.getbbox())
+            im2.save(file_im)
 
     return None
 

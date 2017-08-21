@@ -177,9 +177,35 @@ class Analysis(object):
 
         return None
 
-    def run_visuals(self):
+    def make_figures(self):
         from . import visuals
 
-        visuals.make(self.path_project, self.current_ann)
+        visuals.figures.make_all(self.path_project, self.current_ann)
 
+        return None
+
+    def make_tables(self):
+        from . import visuals
+        # NOTE the following tables require manual adjustments:
+        # `table_ann_params`, `table_ann_target_descr`
+        # The table `table_ann_feature_descr` is created entirely manually.
+
+        visuals.tables.make_all(self.path_project, self.current_ann)
+
+        return None
+
+    def tex_compile(self, path_tex):
+        import os
+
+        from .config import paths, fnames
+        from .visuals import latex
+
+        path = _join(self.path_project, path_tex)
+        for p in os.listdir(path):
+            pp = _join(path, p)
+            if pp.endswith('.tex'):
+                fname = os.path.splitext(os.path.split(pp)[1])[0]
+                latex.utils.compile_latex(path, fname, dpi=300)
+                latex.utils.pdf_to_img(path, fname, in_ext='pdf',
+                                       out_ext='png')
         return None

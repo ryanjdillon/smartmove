@@ -1,53 +1,5 @@
 from os.path import join as _join
 
-def table_isotope(name, attrs, path_table, data):
-    from collections import OrderedDict
-
-    from . import latex
-    from . import utils
-
-    # Create and write experiment table
-    print('Creating isotope experiment table')
-    cols = OrderedDict()
-    #cols['id']           = '%.0f'
-    cols['experiments']  = '%str'
-    cols['date']         = '%str'
-    cols['animal']       = '%str'
-    cols['mass_kg']      = '%.1f'
-    #cols['length_cm']    = '%.0f'
-    #cols['girth_cm']     = '%.0f'
-    cols['water_l']      = '%.1f'
-    cols['water_perc']   = '%.1f'
-    cols['fat_kg']       = '%.1f'
-    cols['fat_perc']     = '%.1f'
-    cols['protein_kg']   = '%.1f'
-    cols['protein_perc'] = '%.1f'
-    cols['density_kgm3'] = '%.1f'
-
-    names, units = utils.parse_col_txt(data.columns)
-    names = ['Experiments', 'Date', 'Animal', 'Mass', 'Water', 'Water',
-             'Fat', 'Fat', 'Protein', 'Protein', 'Density']
-    units = ['', '', '', 'kg', 'L', '\%', 'kg', '\%', 'kg', '\%',
-             r'kg m\textsuperscript{-3}']
-    headers = [names, units]
-
-    table = latex.tables.write_table(path_table,
-                                     name,
-                                     data,
-                                     cols,
-                                     headers,
-                                     adjustwidth=attrs['adjustwidth'],
-                                     tiny=False,
-                                     title=attrs['title'],
-                                     caption=attrs['caption'],
-                                     centering=True,
-                                     extrarowheight=attrs['extrarowheight'],
-                                     label=name,
-                                     notes=attrs['notes'])
-
-    return table
-
-
 def table_exps(name, attrs, path_table, data):
     '''
     '''
@@ -75,8 +27,57 @@ def table_exps(name, attrs, path_table, data):
              'Descent SGLs', 'Ascent SGLs', 'Density',
              r'$\rho\textsubscript{mod}$']
 
-    units = ['', '', '', '', '', '\#', '\# (\%)', '\# (\%)',
-            r'kg m\textsuperscript{-3}', r'kg m\textsuperscript{-3}']
+    units = ['', '', '', '', '', 'No.', 'No. (\%)', 'No. (\%)',
+             r'$kg \cdot m\textsuperscript{-3}$',
+             r'$kg \cdot m\textsuperscript{-3}$']
+    headers = [names, units]
+
+    table = latex.tables.write_table(path_table,
+                                     name,
+                                     data,
+                                     cols,
+                                     headers,
+                                     adjustwidth=attrs['adjustwidth'],
+                                     tiny=False,
+                                     title=attrs['title'],
+                                     caption=attrs['caption'],
+                                     centering=True,
+                                     extrarowheight=attrs['extrarowheight'],
+                                     label=name,
+                                     notes=attrs['notes'])
+
+    return table
+
+
+def table_isotope(name, attrs, path_table, data):
+    from collections import OrderedDict
+
+    from . import latex
+    from . import utils
+
+    # Create and write experiment table
+    print('Creating isotope experiment table')
+    cols = OrderedDict()
+    #cols['id']           = '%.0f'
+    cols['experiments']  = '%str'
+    cols['date']         = '%str'
+    cols['animal']       = '%str'
+    cols['mass_kg']      = '%.1f'
+    #cols['length_cm']    = '%.0f'
+    #cols['girth_cm']     = '%.0f'
+    cols['water_l']      = '%.1f'
+    cols['water_perc']   = '%.1f'
+    cols['fat_kg']       = '%.1f'
+    cols['fat_perc']     = '%.1f'
+    cols['protein_kg']   = '%.1f'
+    cols['protein_perc'] = '%.1f'
+    cols['density_kgm3'] = '%.1f'
+
+    names, units = utils.parse_col_txt(data.columns)
+    names = ['Experiments', 'Date', 'Animal', 'Mass', 'Water', 'Water',
+             'Fat', 'Fat', 'Protein', 'Protein', 'Density']
+    units = ['', '', '', '$(kg)$', '$(L)$', '$(\%)$', '$(kg)$', '$(\%)$',
+            '$(kg)$', '$(\%)$', r'$(kg \cdot m\textsuperscript{-3})$']
     headers = [names, units]
 
     table = latex.tables.write_table(path_table,
@@ -98,6 +99,7 @@ def table_exps(name, attrs, path_table, data):
 
 def table_ann_params(name, attrs, path_table, cfg_ann):
     from collections import OrderedDict
+    import pandas
 
     from . import latex
 
@@ -177,6 +179,40 @@ def table_ann_feature_stats(name, attrs, path_table, data):
     return table
 
 
+def table_ann_target_descr(name, attrs, path_table, data):
+    from collections import OrderedDict
+
+    from . import latex
+    from . import utils
+
+    # Create and write experiment table
+    print('Creating target value description table')
+    cols = OrderedDict()
+    cols['bin']  = '%str'
+    cols['range_rho']   = '%str'
+    cols['range_lipid'] = '%str'
+
+    names = ['Bin', r'$\rho\textsubscript{mod}$ range', 'Lipid range']
+    units = ['', r'$(kg \cdot m\textsuperscript{-3})$', r'$(\%)$']
+    headers = [names, units]
+
+    table = latex.tables.write_table(path_table,
+                                     name,
+                                     data,
+                                     cols,
+                                     headers,
+                                     adjustwidth=attrs['adjustwidth'],
+                                     tiny=False,
+                                     title=attrs['title'],
+                                     caption=attrs['caption'],
+                                     centering=True,
+                                     extrarowheight=attrs['extrarowheight'],
+                                     label=name,
+                                     notes=attrs['notes'])
+
+    return None
+
+
 def table_ann_target_stats(name, attrs, path_table, data):
     from collections import OrderedDict
 
@@ -191,7 +227,7 @@ def table_ann_target_stats(name, attrs, path_table, data):
     cols['perc'] = '%.2f'
 
     names, units = utils.parse_col_txt(data.columns)
-    names = ['Bin', 'Number', '\% of compiled']
+    names = ['Bin', 'No. Sub-glide', '\% of compiled data']
     headers = [names,]
 
     table = latex.tables.write_table(path_table,
@@ -258,10 +294,19 @@ def make_all(path_project, path_analysis):
     name_exps = table_exps.__name__
     table_exps(name_exps, table_attrs[name_exps], path_table, exps_all)
 
-    ## Create ANN hyperparameter table
-    #name_ann_params = table_ann_params.__name__
-    #table_ann_params(name_ann_params, table_attrs[name_ann_params], path_table,
-    #                 cfg_ann)
+    # Create ANN hyperparameter table
+    name_ann_params = table_ann_params.__name__
+    table_ann_params(name_ann_params, table_attrs[name_ann_params], path_table,
+                     cfg_ann)
+
+    # Create ANN target bin description table
+    name_fdescr  = table_ann_target_descr.__name__
+    file_post = _join(path_project, paths['ann'], path_analysis,
+                      fnames['ann']['post'])
+    post = yamlord.read_yaml(file_post)
+    data = utils.target_value_descr(post)
+    table_ann_target_descr(name_fdescr, table_attrs[name_fdescr], path_table,
+                           data)
 
     # Create input feature statistics table
     name_fstats  = table_ann_feature_stats.__name__

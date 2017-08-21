@@ -1,6 +1,6 @@
 def write_table(out_root, fname, data, cols, headers, adjustwidth=False,
         tiny=False, title='', caption='', centering=True, extrarowheight=0,
-        label='', notes='', debug=False):
+        label='', notes='', dpi=300):
     '''Create LaTeX table and write and compile to output directory
 
     Args
@@ -32,8 +32,6 @@ def write_table(out_root, fname, data, cols, headers, adjustwidth=False,
         label for linking to tabel in LaTeX
     notes: str
         Notes regarding table which appear below table
-    debug: bool
-        turn on debugging
 
     Returns
     -------
@@ -68,7 +66,7 @@ def write_table(out_root, fname, data, cols, headers, adjustwidth=False,
     f.close()
 
     # Generate pdf image of table in output directory
-    utils.compile_latex(out_root, fname, debug)
+    utils.compile_latex(out_root, fname, dpi=dpi)
 
     return table
 

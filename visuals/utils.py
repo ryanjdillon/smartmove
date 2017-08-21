@@ -154,7 +154,8 @@ def filter_dataframe(df, ignore):
 
 def parse_col_txt(cols):
     # Unit string conversion
-    unit_dict = {'kg':'kg', 'cm':'cm', 'l':'L', 'perc':'\%', 'kgm3':'kgm3'}
+    unit_dict = {'kg':r'$(kg)$', 'cm':r'$(cm)$', 'l':r'$(L)$', 'perc':r'$(\%)$',
+                 'kgm3':r'$(kg \cdot m\textsuperscript{-3})'}
 
     names = ['']*len(cols)
     units = ['']*len(cols)
@@ -167,21 +168,44 @@ def parse_col_txt(cols):
     return names, units
 
 
+def target_value_descr(post):
+    import numpy
+    import pandas
+
+    br = post['ann']['bins']['values']
+    bl = post['ann']['bins']['lipid_perc']
+
+    str_rho = ['{} - {}'.format(br[i], br[i+1]) for i in range(len(br)-1)]
+    str_lip = ['{:.2f} - {:.2f}'.format(bl[i], bl[i+1]) for i in range(len(bl)-1)]
+
+    ubins = numpy.unique(str_rho)
+    columns = ['bin', 'range_rho', 'range_lipid']
+
+    dfout = pandas.DataFrame(index=range(len(ubins)), columns=columns)
+
+    for i in range(len(ubins)):
+        dfout['bin'][i] = i + 1
+        dfout['range_rho'][i] = str_rho[i]
+        dfout['range_lipid'][i] = str_lip[i]
+
+    return dfout
+
+
 def target_value_stats(train, valid, test):
     import numpy
     import pandas
 
-    allbins = numpy.hstack([train[1], valid[1], test[1]])
-    ubins = numpy.unique(allbins)
+    bins_all = numpy.hstack([train[1], valid[1], test[1]])
+    ubins = numpy.unique(bins_all)
     columns = ['bin', 'n', 'perc']
 
     dfout = pandas.DataFrame(index=range(len(ubins)), columns=columns)
 
     for i in range(len(ubins)):
-        n = len(numpy.where(allbins==ubins[i])[0])
-        dfout['bin'][i] = ubins[i]
+        n = len(numpy.where(bins_all==ubins[i])[0])
+        dfout['bin'][i] = ubins[i] + 1
         dfout['n'][i] = n
-        dfout['perc'][i] = n/len(allbins)*100
+        dfout['perc'][i] = n/len(bins_all)*100
 
     for key in ['n', 'perc']:
         dfout[key] = pandas.to_numeric(dfout[key])
@@ -206,15 +230,15 @@ def input_feature_stats(df, feature_cols):
     '''
     import pandas
 
-    features = [r'Absolute depth change (m)',
+    features = [r'Absolute depth change ($m$)',
                 r'Dive phase',
-                r'Mean acceleration (g)',
-                r'Mean depth (m)',
-                r'Mean pitch (\degree)',
-                r'Mean speed (m s\textsuperscript{-1})',
-                r'Mean seawater density (kg m\textsuperscript{3})',
-                r'Total depth change (m)',
-                r'Total speed change (m s\textsuperscript{-1})']
+                r'Mean acceleration ($g$)',
+                r'Mean depth ($m$)',
+                r'Mean pitch ($\degree$)',
+                r'Mean speed ($m \cdot s\textsuperscript{-1}$)',
+                r'Mean seawater density ($kg \cdot m\textsuperscript{-3}$)',
+                r'Total depth change ($m$)',
+                r'Total speed change ($m \cdot s\textsuperscript{-1}$)']
 
     columns = ['feature', 'min', 'max', 'mean', 'std']
     dfout = pandas.DataFrame(index=range(len(feature_cols)), columns=columns)
