@@ -1,6 +1,6 @@
 from os.path import join as _join
 
-def plot_sgls_tmbd(exps_all, path_plot=None):
+def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     import numpy
     import matplotlib.pyplot as plt
     from matplotlib.offsetbox import AnchoredText
@@ -11,6 +11,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
     from . import latex
     from pyotelem.plots.plotutils import add_alpha_labels
 
+    seaborn.set(style="whitegrid", color_codes=True)
     colors = seaborn.color_palette()
 
     # Coefficient of determination
@@ -37,6 +38,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
         '''Get coords on a circle around x, y with radius `dist` at `theta`'''
         import numpy
         import itertools
+        import copy
 
         n = 1
         if numpy.iterable(x): n = len(x)
@@ -55,26 +57,26 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
             others = ind - set([i,])
             for j in others:
                 d = numpy.sqrt(abs(y[j] - y[i])**2 + abs(x[j]-x[i])**2)
-                if d <= dist:
+                if d <= dist/2:
                     neighbors.append(j)
 
         # Set rotating angle of annotation position for neighboring points
+        # Caclulate positions of neighbor annotations at `theta` and `dist`
+        xa = copy.deepcopy(x)
+        ya = copy.deepcopy(y)
         for i in neighbors:
-            theta[i] = next(theta_gen)
-
-        # Caclulate positions of annotations at `theta` and `dist`
-        xa = x + numpy.sin(theta)*dist
-        ya = y + numpy.cos(theta)*dist
+            xa[i] = x[i] + numpy.sin(next(theta_gen))*dist
+            ya[i] = y[i] + numpy.cos(next(theta_gen))*dist
 
         return xa, ya
 
     # Plot colored, sized points
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,15))
 
-    delta = exps_all['rho_mod'] - exps_all['density_kgm3']
-    delta_norm = unit_normalize(delta) + 1
-    udeltas = numpy.unique(delta)
-    sizes = numpy.unique(delta_norm)**2*30
+    deltas = exps_all['rho_mod'] - exps_all['density_kgm3']
+    deltas_norm = unit_normalize(deltas) + 1
+    udeltas = numpy.unique(deltas)
+    sizes = numpy.unique(deltas_norm)**2*30
 
     axes = [ax1, ax2]
     keys = ['perc_des', 'perc_asc']
@@ -107,7 +109,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
         #('_', 'hline')
         ))
     markers = list(markers.keys())
-    arrowprops = dict(arrowstyle='-', facecolor='black')
+    arrowprops = dict(arrowstyle='->', facecolor='black')
     label_dist = 3
 
     for ax, key in zip(axes, keys):
@@ -136,16 +138,18 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
                 x = exps_all['rho_mod'][ind[i]]
                 y = exps_all[key][ind[i]]
                 exp_id = exps_all['id'][ind[i]]
-                delta = x - exps_all['density_kgm3'][ind[i]]
-                m = numpy.where(delta==udeltas)[0][0]
+                subdelta = x - exps_all['density_kgm3'][ind[i]]
+                m = numpy.where(subdelta==udeltas)[0][0]
 
                 # Plot positive density changed experiments
-                ax.scatter(x, y, label=a, marker=markers[m], color=colors[c], s=60)
+                #ax.scatter(x, y, label=a, marker=markers[m], color=colors[c], s=60)
 
                 text = ax.annotate(exp_id, xy=(x,y), xytext=(xa[i], ya[i]),
+                                   color=colors[c],
                                    horizontalalignment='center',
                                    verticalalignment='center',
                                    arrowprops=arrowprops)
+
             c += 1
 
         # Cacluate curve
@@ -158,9 +162,10 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
 
         ax.plot(xi, yi, label='fit', color='grey', linestyle='dashed')
 
-        ## Add text box with equation and r-squared
-        #anchored_text = AnchoredText('{}\n{}'.format(str_eqn, str_r2), loc=3)
-        #ax.add_artist(anchored_text)
+        # Expand ylimits to allow for annotations
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim((ymin-5.0, ymax+5.0))
+
 
     # Add alpha labels
     xpos = [0.05, 0.9]
@@ -171,10 +176,15 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
     # dot size legend
     prox_handles = list()
     prox_labels = list()
+    import matplotlib.patches as mpatches
     for i in range(len(udeltas)):
-        sc = plt.scatter([], [], marker=markers[i], color='black', s=60)
-        prox_handles.append(sc)
-        prox_labels.append('{:5.2f}'.format(udeltas[i]))
+        # NOTE use markers[i] for changing shape marker legend
+        ids = numpy.unique(exps_all['id'][deltas==udeltas[i]])
+        s = '{:>11}: {:5.1f}'.format(', '.join([str(f) for f in ids]), udeltas[i])
+        #sc = plt.scatter([], [], marker=m, color='#3d5c5c', s=60)
+
+        prox_handles.append(mpatches.Patch(color='none'))#sc)
+        prox_labels.append(s)#'{:5.2f}'.format(udeltas[i]))
 
     # space between size legend and marker legend
     prox_handles.append(plt.scatter([], [], s=0))
@@ -182,7 +192,9 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
 
     # color dot animal legend
     for i, a in enumerate(animals):
-        prox_handles.append(plt.scatter([], [], color=colors[i], s=20))
+        #prox_handles.append(plt.scatter([], [], color=colors[i], s=20))
+
+        prox_handles.append(mpatches.Patch(color=colors[i]))
         prox_labels.append(a)
 
     # fit to points legend
@@ -192,7 +204,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
     # Plot regular artists
     plt.legend(handles=prox_handles, labels=prox_labels,
                bbox_to_anchor=(1, 1), loc='upper left',
-               title=r'$\Delta \, \rho_{mod}$'+'\n'+r'$(kg \, m^{-3})$')
+               title=r'Exp: $\Delta \, \rho_{mod}$'+'\n'+r'$(kg \, m^{-3})$')
 
     # Plot fit of all points
     fname = 'experiments_density_sgls-perc'
@@ -204,7 +216,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None):
 
         # TODO perhaps move out of latex to image utils repo
         latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
-                               dpi='600')
+                               dpi=dpi)
     plt.show()
 
     return None
@@ -247,6 +259,7 @@ def plot_learning_curves(m, path_plot=None):
     x_max = utils.roundup(int(x.max()), x_mag)+10**x_mag
     new_labels = numpy.arange(0, x_max, 10**x_mag)
     new_ticks = linear(new_labels, *popt)
+    ax.set_xlim((new_ticks[0], new_ticks[-1]))
     ax.set_xticks(new_ticks)
     ax.set_xticklabels(new_labels.astype(int))
 
@@ -267,10 +280,9 @@ def plot_learning_curves(m, path_plot=None):
     return None
 
 
-def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None,
-        show=False):
+def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
     '''Plot density of subglides over time for whole exp, des, and asc'''
-    import seaborn as sns
+    import seaborn
     import matplotlib.pyplot as plt
     import numpy
 
@@ -283,7 +295,7 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None,
     # Make jointplots as subplots
     # http://stackoverflow.com/a/35044845/943773
 
-    sns.set(style="white", color_codes=True)
+    #seaborn.set(style="white", color_codes=True)
 
     fig = plt.figure()
 
@@ -293,7 +305,7 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None,
     # depth, calc avg over sgl time
     sgl_y = sgls['mean_depth']
 
-    g = sns.jointplot(x=sgl_x, y=sgl_y, kind='hex', stat_func=None)
+    g = seaborn.jointplot(x=sgl_x, y=sgl_y, kind='hex', stat_func=None)
 
     g.fig.axes[0].set_ylim(0, max_depth)
     g.fig.axes[0].invert_yaxis()
@@ -316,15 +328,12 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None,
         file_plot_sgl = _join(path_plot, fname_plot_sgl)
         g.savefig(filename=file_plot_sgl)
 
-    if show:
-        plt.show()
-    else:
-        plt.close()
+    plt.close('all')
 
     return None
 
 
-def plot_all_sgl_densities(path_project, cfg_ann, path_plot, show=False):
+def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
     import os
     import pandas
 
@@ -363,7 +372,7 @@ def plot_all_sgl_densities(path_project, cfg_ann, path_plot, show=False):
                    '{}').format(year, month, day, animal, mod)
 
         sgl_density(exp_id, sgls[mask_sgls], max_depth=20, textstr=textstr,
-                    path_plot=path_plot, show=show)
+                    path_plot=path_plot)
     return None
 
 
@@ -400,11 +409,6 @@ def make_all(path_project, path_analysis):
     # Plot SGLs against `rho_mod`
     plot_sgls_tmbd(exps_all, path_plot=path_plot)
 
-    file_results_data = _join(path_output, fnames['ann']['dataset'])
-    results_dataset = pandas.read_pickle(file_results_data)
-    m = utils.last_monitors(results_dataset)
-    plot_learning_curves(m, path_plot)
-
     # Plot confusion matrix
     # TODO CM key named validation in smartmove, should change with refactoring
     file_cms_data = _join(path_output, fnames['ann']['cms_tune'])
@@ -421,6 +425,11 @@ def make_all(path_project, path_analysis):
                                     cmap=None, xlabel_rotation=45,
                                     path_plot=path_plot)
 
+    # Plot learning curve of ANN
+    file_results_data = _join(path_output, fnames['ann']['dataset'])
+    results_dataset = pandas.read_pickle(file_results_data)
+    m = utils.last_monitors(results_dataset)
+    plot_learning_curves(m, path_plot)
 
     # Plot subglide heatmaps
     plot_all_sgl_densities(path_project, cfg_ann, path_plot)
