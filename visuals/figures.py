@@ -74,47 +74,19 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,15))
 
     deltas = exps_all['rho_mod'] - exps_all['density_kgm3']
-    deltas_norm = unit_normalize(deltas) + 1
     udeltas = numpy.unique(deltas)
-    sizes = numpy.unique(deltas_norm)**2*30
 
     axes = [ax1, ax2]
     keys = ['perc_des', 'perc_asc']
     animals = numpy.unique(exps_all['animal'])
     axes[0].set_ylabel('Percent of total sub-glides by dive phase $(\%)$')
 
-    from collections import OrderedDict
-    markers = OrderedDict((
-        #('.', 'point'),
-        #(',', 'pixel'),
-        ('o', 'circle'),
-        ('v', 'triangle_down'),
-        ('^', 'triangle_up'),
-        ('<', 'triangle_left'),
-        ('>', 'triangle_right'),
-        #('1', 'tri_down'),
-        #('2', 'tri_up'),
-        #('3', 'tri_left'),
-        #('4', 'tri_right'),
-        #('8', 'octagon'),
-        ('s', 'square'),
-        ('p', 'pentagon'),
-        #('*', 'star'),
-        ('h', 'hexagon1'),
-        #('H', 'hexagon2'),
-        ('+', 'plus'),
-        ('D', 'diamond'),
-        ('d', 'thin_diamond'),
-        #('|', 'vline'),
-        #('_', 'hline')
-        ))
-    markers = list(markers.keys())
-    arrowprops = dict(arrowstyle='->', facecolor='black')
+    arrowprops = dict(arrowstyle='wedge', facecolor='black')
     label_dist = 3
 
     for ax, key in zip(axes, keys):
         c = 0
-        ax.set_xlabel(r'$\rho_{mod} \; (kg \, m^{-3})$')
+        ax.set_xlabel(r'$\rho_{mod} \; (kg \cdot m^{-3})$')
 
         # Get all points for des/asc for generating linear fits
         x_all = exps_all['rho_mod'].values
@@ -141,9 +113,6 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
                 subdelta = x - exps_all['density_kgm3'][ind[i]]
                 m = numpy.where(subdelta==udeltas)[0][0]
 
-                # Plot positive density changed experiments
-                #ax.scatter(x, y, label=a, marker=markers[m], color=colors[c], s=60)
-
                 text = ax.annotate(exp_id, xy=(x,y), xytext=(xa[i], ya[i]),
                                    color=colors[c],
                                    horizontalalignment='center',
@@ -166,7 +135,6 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
         ymin, ymax = ax.get_ylim()
         ax.set_ylim((ymin-5.0, ymax+5.0))
 
-
     # Add alpha labels
     xpos = [0.05, 0.9]
     ypos = [0.95, 0.95]
@@ -177,23 +145,8 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     prox_handles = list()
     prox_labels = list()
     import matplotlib.patches as mpatches
-    for i in range(len(udeltas)):
-        # NOTE use markers[i] for changing shape marker legend
-        ids = numpy.unique(exps_all['id'][deltas==udeltas[i]])
-        s = '{:>11}: {:5.1f}'.format(', '.join([str(f) for f in ids]), udeltas[i])
-        #sc = plt.scatter([], [], marker=m, color='#3d5c5c', s=60)
-
-        prox_handles.append(mpatches.Patch(color='none'))#sc)
-        prox_labels.append(s)#'{:5.2f}'.format(udeltas[i]))
-
-    # space between size legend and marker legend
-    prox_handles.append(plt.scatter([], [], s=0))
-    prox_labels.append('')
-
     # color dot animal legend
     for i, a in enumerate(animals):
-        #prox_handles.append(plt.scatter([], [], color=colors[i], s=20))
-
         prox_handles.append(mpatches.Patch(color=colors[i]))
         prox_labels.append(a)
 
@@ -202,9 +155,28 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     prox_labels.append('Linear fit\n{}'.format(str_r2))
 
     # Plot regular artists
-    plt.legend(handles=prox_handles, labels=prox_labels,
-               bbox_to_anchor=(1, 1), loc='upper left',
-               title=r'Exp: $\Delta \, \rho_{mod}$'+'\n'+r'$(kg \, m^{-3})$')
+    leg = plt.legend(handles=prox_handles, labels=prox_labels,
+                     bbox_to_anchor=(1, 1), loc='upper left')
+
+    # Create delta rho_mod table
+    ids_str = numpy.array(['']*len(udeltas), dtype=object)
+    for i in range(len(udeltas)):
+        ids = numpy.unique(exps_all['id'][deltas==udeltas[i]])
+        ids_str[i] = ', '.join([str(f) for f in ids])
+
+    table_title = r'$\Delta \, kg \cdot m^{-3}$'+'\n'
+    table_id = ''
+    table_rho = ''
+    for i in range(len(udeltas)):
+        table_id += '{} :\n'.format(ids_str[i])#, udeltas[i])
+        table_rho += '{:6.1f}\n'.format(udeltas[i])
+
+    ax2.annotate(table_title, xy=(1.06, 0.43), xycoords='axes fraction',
+                 fontsize=12)
+    ax2.annotate(table_id, xy=(1.15, 0.0), xycoords='axes fraction',
+                 horizontalalignment='right', fontsize=10)
+    ax2.annotate(table_rho, xy=(1.16, 0.0), xycoords='axes fraction',
+                 fontsize=10)
 
     # Plot fit of all points
     fname = 'experiments_density_sgls-perc'
@@ -247,7 +219,7 @@ def plot_learning_curves(m, path_plot=None):
     ax.plot(m['train']['err'], label='Train')
     ax.plot(m['valid']['err'], label='Validation')
     ax.set_ylabel('Cross-entropy error')
-    ax.set_xlabel('Number of samples')
+    ax.set_xlabel('No. of samples')
 
     # Fit a linear regression througn n_train to get ticks at regular locs
     x = m['n_train'].values.astype(float)
@@ -286,6 +258,8 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
     import matplotlib.pyplot as plt
     import numpy
 
+    from . import utils
+
     # TODO add A/ B, bottom left
     # TODO move textbox bottom right
     # TODO set limits for density the same
@@ -295,7 +269,7 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
     # Make jointplots as subplots
     # http://stackoverflow.com/a/35044845/943773
 
-    #seaborn.set(style="white", color_codes=True)
+    seaborn.set(style='white')
 
     fig = plt.figure()
 
@@ -309,7 +283,11 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
 
     g.fig.axes[0].set_ylim(0, max_depth)
     g.fig.axes[0].invert_yaxis()
-    g.set_axis_labels(xlabel='Time', ylabel='Depth (m)')
+    labels = g.fig.axes[0].get_xticks()
+    labels = (numpy.array(labels)-labels[0])/16.0
+    labels = [utils.hourmin(n) for n in labels]
+    g.fig.axes[0].set_xticklabels(labels, rotation=45)
+    g.set_axis_labels(xlabel='Experiment duration', ylabel='Depth (m)')
 
     ## TODO add colorbar
     ## http://stackoverflow.com/a/29909033/943773
