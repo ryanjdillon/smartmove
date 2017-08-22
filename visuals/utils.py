@@ -10,6 +10,15 @@ def magnitude(x):
     return int(math.floor(math.log10(x)))
 
 
+def hourmin(n_seconds):
+    '''Generate a string of hours and minutes from total number of seconds'''
+
+    hours, remainder = divmod(n_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    s = '{:.0f}hr {:2.0f}min'.format(hours, minutes)
+
+    return s
+
 def compile_exp_data(path_project, field, cfg_ann):
     '''Walk root tag directory and compile derived values to dataframe
 
@@ -77,9 +86,7 @@ def compile_exp_data(path_project, field, cfg_ann):
             start = tag['datetimes'][masks['exp']].iloc[0]
             stop = tag['datetimes'][masks['exp']].iloc[-1]
 
-            hours, remainder = divmod((stop - start).total_seconds(), 3600)
-            minutes, seconds = divmod(remainder, 60)
-            data['duration'][i] = '{:.0f}hr {:2.0f}min'.format(hours, minutes)
+            data['duration'][i] = hourmin((stop - start).total_seconds())
 
             # Create string for mod type
             block_type = field.ix[i, 'block_type']
