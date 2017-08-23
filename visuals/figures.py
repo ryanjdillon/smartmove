@@ -2,6 +2,7 @@ from os.path import join as _join
 
 def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     import numpy
+    import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
     from matplotlib.offsetbox import AnchoredText
     import os
@@ -118,7 +119,6 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
                                    horizontalalignment='center',
                                    verticalalignment='center',
                                    arrowprops=arrowprops)
-
             c += 1
 
         # Cacluate curve
@@ -144,13 +144,12 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     # dot size legend
     prox_handles = list()
     prox_labels = list()
-    import matplotlib.patches as mpatches
     # color dot animal legend
     for i, a in enumerate(animals):
         prox_handles.append(mpatches.Patch(color=colors[i]))
         prox_labels.append(a)
 
-    # fit to points legend
+    # Fit to points legend
     prox_handles.append((plt.plot([], [], color='grey', linestyle='dashed'))[0])
     prox_labels.append('Linear fit\n{}'.format(str_r2))
 
@@ -165,6 +164,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
         ids_str[i] = ', '.join([str(f) for f in ids])
 
     table_title = r'$\Delta \, kg \cdot m^{-3}$'+'\n'
+    # Use separate strings for each column for alignment
     table_id = ''
     table_rho = ''
     for i in range(len(udeltas)):
@@ -252,7 +252,7 @@ def plot_learning_curves(m, path_plot=None):
     return None
 
 
-def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
+def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     '''Plot density of subglides over time for whole exp, des, and asc'''
     import seaborn
     import matplotlib.pyplot as plt
@@ -296,13 +296,13 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
 
     # Add text annotation top left if `textstr` passed
     if textstr:
-        props = dict(boxstyle='round', facecolor='grey', alpha=0.1)
-        g.fig.axes[0].text(0.05, 0.20, textstr, transform=g.fig.axes[0].transAxes,
+        props = dict(facecolor='none', edgecolor='none', alpha=0.1)
+        g.fig.axes[0].text(0.02, 0.05, textstr, transform=g.fig.axes[0].transAxes,
                            fontsize=14, verticalalignment='top', bbox=props)
 
     if path_plot:
         ext = 'eps'
-        fname_plot_sgl = 'heatmap_{}.{}'.format(exp_id, ext)
+        fname_plot_sgl = 'heatmap_{}.{}'.format(exp_name, ext)
         file_plot_sgl = _join(path_plot, fname_plot_sgl)
         g.savefig(filename=file_plot_sgl)
 
@@ -312,6 +312,7 @@ def sgl_density(exp_id, sgls, max_depth=20, textstr='', path_plot=None):
 
 
 def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
+    import numpy
     import os
     import pandas
 
@@ -322,7 +323,7 @@ def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
     path_tag = _join(path_project, paths['tag'])
     path_glide = _join(path_project, paths['glide'])
     data_paths = list()
-    exp_ids = list()
+    exp_names = list()
     for p in os.listdir(path_tag):
         path_exp = _join(path_tag, p)
         if os.path.isdir(path_exp):
@@ -330,27 +331,31 @@ def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
             path_glide_data = _join(path_project, path_glide, p)
             path_subdir = utils.get_subdir(path_glide_data, cfg_ann['data'])
             data_paths.append(_join(path_glide_data, path_subdir))
-            exp_ids.append(p)
+            exp_names.append(p)
 
-    for p, exp_id in zip(data_paths, exp_ids):
-        year   = exp_id[:4]
-        month  = exp_id[4:6]
-        day    = exp_id[6:8]
-        animal = exp_id.split('_')[3].lower()
-        mod    = ' '.join(exp_id.split('_')[4:])
-
-        fname_tag = fnames['tag']['data'].format(exp_id)
+    sort_ind = numpy.argsort(data_paths)
+    data_paths = numpy.array(data_paths)[sort_ind]
+    exp_names = numpy.array(exp_names)[sort_ind]
+    exp_id = 1
+    for p, exp_name in zip(data_paths, exp_names):
+        fname_tag = fnames['tag']['data'].format(exp_name)
         tag = pandas.read_pickle(_join(p, fname_tag))
         sgls = pandas.read_pickle(_join(p, fnames['glide']['sgls']))
         fname_mask_sgls_filt = fnames['glide']['mask_sgls_filt']
         mask_sgls = pandas.read_pickle(_join(p, fname_mask_sgls_filt))
 
-        textstr = ('{}-{}-{}\n'
-                   '{}\n'
-                   '{}').format(year, month, day, animal, mod)
+        year   = exp_name[:4]
+        month  = exp_name[4:6]
+        day    = exp_name[6:8]
+        animal = exp_name.split('_')[3].capitalize()
+        mod    = ' '.join(exp_name.split('_')[4:])
+        fmt = '{}. {}-{}-{} {} {}'
+        textstr = fmt.format(exp_id, year, month, day, animal, mod)
 
-        sgl_density(exp_id, sgls[mask_sgls], max_depth=20, textstr=textstr,
+        sgl_density(exp_name, sgls[mask_sgls], max_depth=20, textstr=textstr,
                     path_plot=path_plot)
+        exp_id += 1
+
     return None
 
 
