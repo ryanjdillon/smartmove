@@ -1,4 +1,36 @@
+'''
+{'axes.axisbelow': True,
+ 'axes.edgecolor': '.8',
+ 'axes.facecolor': 'white',
+ 'axes.grid': True,
+ 'axes.labelcolor': '.15',
+ 'axes.linewidth': 1.0,
+ 'figure.facecolor': 'white',
+ 'font.family': [u'sans-serif'],
+ 'font.sans-serif': [u'Arial',
+  u'DejaVu Sans',
+  u'Liberation Sans',
+  u'Bitstream Vera Sans',
+  u'sans-serif'],
+ 'grid.color': '.8',
+ 'grid.linestyle': u'-',
+ 'image.cmap': u'rocket',
+ 'legend.frameon': False,
+ 'legend.numpoints': 1,
+ 'legend.scatterpoints': 1,
+ 'lines.solid_capstyle': u'round',
+ 'text.color': '.15',
+ 'xtick.color': '.15',
+ 'xtick.direction': u'out',
+ 'xtick.major.size': 0.0,
+ 'xtick.minor.size': 0.0,
+ 'ytick.color': '.15',
+ 'ytick.direction': u'out',
+ 'ytick.major.size': 0.0,
+ 'ytick.minor.size': 0.0}
+'''
 from os.path import join as _join
+_linewidth = 0.5
 
 def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     import numpy
@@ -206,6 +238,7 @@ def plot_learning_curves(m, path_plot=None):
     import numpy
     import scipy.optimize
     import seaborn
+    from pyotelem.plots import plotutils
 
     from . import latex
     from . import utils
@@ -216,8 +249,8 @@ def plot_learning_curves(m, path_plot=None):
 
     fig, ax = plt.subplots()
 
-    ax.plot(m['train']['err'], label='Train')
-    ax.plot(m['valid']['err'], label='Validation')
+    ax.plot(m['train']['err'], label='Train', linewidth=_linewidth)
+    ax.plot(m['valid']['err'], label='Validation', linewidth=_linewidth)
     ax.set_ylabel('Cross-entropy error')
     ax.set_xlabel('No. of samples')
 
@@ -227,8 +260,8 @@ def plot_learning_curves(m, path_plot=None):
     popt, pcov = scipy.optimize.curve_fit(linear, x, y)
 
     # Create even tick labels given order of maximum value in `x`
-    x_mag = utils.magnitude(x.max())
-    x_max = utils.roundup(int(x.max()), x_mag)+10**x_mag
+    x_mag = plotutils.magnitude(x.max())
+    x_max = plotutils.roundup(int(x.max()), x_mag)+10**x_mag
     new_labels = numpy.arange(0, x_max, 10**x_mag)
     new_ticks = linear(new_labels, *popt)
     ax.set_xlim((new_ticks[0], new_ticks[-1]))
@@ -244,9 +277,6 @@ def plot_learning_curves(m, path_plot=None):
         file_path = _join(path_plot, '{}.{}'.format(fname, ext))
         plt.savefig(file_path, format=ext, bbox_inches='tight')
 
-        # TODO perhaps move out of latex to image utils repo
-        latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
-                               dpi='600')
     plt.show()
 
     return None
@@ -256,7 +286,9 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     '''Plot density of subglides over time for whole exp, des, and asc'''
     import seaborn
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import FuncFormatter, ScalarFormatter
     import numpy
+    from pyotelem.plots import plotutils
 
     from . import utils
 
@@ -281,13 +313,15 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
 
     g = seaborn.jointplot(x=sgl_x, y=sgl_y, kind='hex', stat_func=None)
 
+    # Set depth limit of plot and invert depth values
     g.fig.axes[0].set_ylim(0, max_depth)
     g.fig.axes[0].invert_yaxis()
-    labels = g.fig.axes[0].get_xticks()
-    labels = (numpy.array(labels)-labels[0])/16.0
-    labels = [utils.hourmin(n) for n in labels]
-    g.fig.axes[0].set_xticklabels(labels, rotation=45)
-    g.set_axis_labels(xlabel='Experiment duration', ylabel='Depth (m)')
+
+    # Convert axes labels to experiment duration in hours/min
+    g.set_axis_labels(xlabel='Experiment duration ($min \, sec$)',
+                      ylabel='Depth ($m$)')
+    mf2 = FuncFormatter(plotutils.nsamples_to_hourmin)
+    g.fig.axes[0].xaxis.set_major_formatter(mf2)
 
     ## TODO add colorbar
     ## http://stackoverflow.com/a/29909033/943773
@@ -311,13 +345,12 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     return None
 
 
-def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
+def filt_paths(path_project, cfg_ann):
     import numpy
     import os
-    import pandas
 
-    from .. import utils
     from ..config import paths, fnames
+    from .. import utils
 
     # Get list of paths filtered by parameters in `cfg_ann['data']`
     path_tag = _join(path_project, paths['tag'])
@@ -336,6 +369,20 @@ def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
     sort_ind = numpy.argsort(data_paths)
     data_paths = numpy.array(data_paths)[sort_ind]
     exp_names = numpy.array(exp_names)[sort_ind]
+
+    return data_paths, exp_names
+
+
+def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
+    import numpy
+    import os
+    import pandas
+
+    from .. import utils
+    from ..config import paths, fnames
+
+    data_paths, exp_names = filt_paths(path_project, cfg_ann)
+
     exp_id = 1
     for p, exp_name in zip(data_paths, exp_names):
         fname_tag = fnames['tag']['data'].format(exp_name)
@@ -356,6 +403,47 @@ def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
                     path_plot=path_plot)
         exp_id += 1
 
+    return None
+
+
+def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
+    import numpy
+    from pandas import read_pickle
+    from pyotelem.plots import plotglides
+    import seaborn
+
+    from ..config import paths, fnames
+    from .. import utils
+
+    seaborn.set_context('paper')
+    seaborn.set_style('white', {'axes.linewidth':0.1, 'xtick.color':'black',
+        'xtick.major.size':4.0,'xtick.direction':'out'})
+
+    data_paths, exp_names = filt_paths(path_project, cfg_ann)
+
+    p = data_paths[0]
+    e = exp_names[0]
+
+    fname_tag = fnames['tag']['data'].format(e)
+    tag = read_pickle(_join(p, fname_tag))
+    mask_tag = read_pickle(_join(p, fnames['glide']['mask_tag']))
+    mask_tag_filt = read_pickle(_join(p, fnames['glide']['mask_tag_filt']))
+
+
+    sgls = read_pickle(_join(p, fnames['glide']['sgls']))
+    mask_sgls_filt = read_pickle(_join(p, fnames['glide']['mask_sgls_filt']))
+
+    # TODO hardcoded, would be insanely tricky to autofind a good example of
+    # subglides, manually found and pass correct data indices for location
+    mask_exp = mask_tag['exp']
+    depths = tag['depth'].values
+    pitch_lf = tag['p_lf'].values
+    roll_lf = tag['r_lf'].values
+    heading_lf = tag['h_lf'].values
+    plotglides.plot_sgls(mask_exp, depths, mask_tag_filt, sgls, mask_sgls_filt,
+                         pitch_lf, roll_lf, heading_lf,
+                         idx_start=259000, idx_end=260800, path_plot=path_plot,
+                         clip_x=clip_x)
     return None
 
 
@@ -416,6 +504,9 @@ def make_all(path_project, path_analysis):
 
     # Plot subglide heatmaps
     plot_all_sgl_densities(path_project, cfg_ann, path_plot)
+
+    # Plot example subglide plot
+    plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True)
 
     # Convert all `.eps` images to `.png`
     for fig in os.listdir(path_plot):
