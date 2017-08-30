@@ -39,24 +39,28 @@ def get_all():
     title = r'''ANN target value bins with $\rho\textsubscript{mod}$ and lipid
 percent ranges.'''
     caption = r'''Calculated $\rho\textsubscript{mod}$ values are assigned to a bin such that $bin\textsubscript{min} >= \rho\textsubscript{mod} > bin\textsubscript{max}$. Lipid percent ranges were calculated from the corresponding $\rho\textsubscript{mod}$ ranges using the equations presented in \cite{biuw_blubber_2003}. Bins prepended with an asterisk were those within which the ANN made classifications (see Table~\ref{table_ann_feature_stats}).'''
-    attrs = add_attrs(attrs, 'table_ann_target_descr', title, caption)
+    attrs = add_attrs(attrs, 'table_ann_target_descr', title, caption,
+            adjustwidth=False)
 
 
     # table_ann_params
     title = '''Neural network configuration attributes.'''
     caption = '''During the network tuning an ANN was trained and tested for all permutations of possible values for each attribute. Bold faced attributes produced the network yielding the highest accuracy. See Appendix 1 for a glossary of terms.'''
-    attrs = add_attrs(attrs, 'table_ann_params', title, caption)
+    attrs = add_attrs(attrs, 'table_ann_params', title, caption,
+            adjustwidth=False)
 
 
     # table_ann_feature_stats
     title = 'Input feature value ranges, mean, and standard deviation'
     caption = ''
-    attrs = add_attrs(attrs, 'table_ann_feature_stats', title, caption)
+    attrs = add_attrs(attrs, 'table_ann_feature_stats', title, caption,
+            adjustwidth=False)
 
 
     # table_target_stats
     title = '''Number of sub-glide events per target value bin with percentage of total number of compiled target values.'''
     caption = '''There were a total of 9985 target values from all compiled sub-glides.'''
-    attrs = add_attrs(attrs, 'table_ann_target_stats', title, caption)
+    attrs = add_attrs(attrs, 'table_ann_target_stats', title, caption,
+            adjustwidth=False)
 
     return attrs
