@@ -21,6 +21,7 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
     import matplotlib.pyplot as plt
     import numpy
     import os
+    from pyotelem.plots import plotutils
 
     from ..visuals import latex
     from ..visuals import utils
@@ -35,8 +36,8 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
 
     # Creat matrix plot from confusion matric
     fig, ax = plt.subplots()
-    cm_mag = utils.magnitude(cm.max())
-    cm_max = utils.roundup(int(cm.max()), cm_mag)
+    cm_mag = plotutils.magnitude(cm.max())
+    cm_max = plotutils.roundup(int(cm.max()), cm_mag)
     img = ax.imshow(cm, interpolation='nearest', cmap=cmap, vmin=0,
                     vmax=cm_max)
     ax.set_title(title)
