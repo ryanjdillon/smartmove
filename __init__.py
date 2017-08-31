@@ -1,6 +1,7 @@
 from . import ann
 from . import glideid
 from . import utils
+from . import visuals
 from .analysis import Analysis
 
 def create_project(path_project):
