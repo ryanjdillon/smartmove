@@ -1,4 +1,10 @@
 '''
+from pyotelem.plots.plotutils import add_alpha_labels
+# Add alpha labels
+xpos = [0.05, 0.9]
+ypos = [0.95, 0.95]
+axes = add_alpha_labels([ax1, ax2], xpos=xpos, ypos=ypos, color='black')
+
 {'axes.axisbelow': True,
  'axes.edgecolor': '.8',
  'axes.facecolor': 'white',
@@ -40,12 +46,9 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     import os
     import seaborn
     import scipy.optimize
+    from pyotelem.plots import plotutils
 
     from . import latex
-    from pyotelem.plots.plotutils import add_alpha_labels
-
-    seaborn.set(style="whitegrid", color_codes=True)
-    colors = seaborn.color_palette()
 
     # Coefficient of determination
     def r_squared(x, y):
@@ -103,74 +106,61 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
 
         return xa, ya
 
+    colors = seaborn.color_palette()
+    seaborn.set_style('whitegrid', {'axes.linewidth':0.5,})
+
     # Plot colored, sized points
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15,15))
+    fig, ax1 = plt.subplots(1, 1)#, figsize=(10,10))
 
     deltas = exps_all['rho_mod'] - exps_all['density_kgm3']
     udeltas = numpy.unique(deltas)
-
-    axes = [ax1, ax2]
-    keys = ['perc_des', 'perc_asc']
     animals = numpy.unique(exps_all['animal'])
-    axes[0].set_ylabel('Percent of total sub-glides by dive phase $(\%)$')
 
-    arrowprops = dict(arrowstyle='wedge', facecolor='black')
+    # Get all points for des/asc for generating linear fits
+    x_all = exps_all['rho_mod'].values
+    y_all = exps_all['perc_des'].values
+
     label_dist = 3
+    xa_all, ya_all = annotate_coords(x_all, y_all, label_dist)
 
-    for ax, key in zip(axes, keys):
-        c = 0
-        ax.set_xlabel(r'$\rho_{mod} \; (kg \cdot m^{-3})$')
+    c = 0
+    arrowprops = dict(arrowstyle='wedge', facecolor='black')
+    for a in animals:
 
-        # Get all points for des/asc for generating linear fits
-        x_all = exps_all['rho_mod'].values
-        y_all = exps_all[key].values
+        # Get density and percent des/asc values for animal
+        amask = exps_all['animal'] == a
+        labels = exps_all['id'][amask]
 
-        xa_all, ya_all = annotate_coords(x_all, y_all, label_dist)
+        x = exps_all['rho_mod'][amask].values
+        y = exps_all['perc_des'][amask].values
+        xa = xa_all[amask]
+        ya = ya_all[amask]
 
-        for a in animals:
+        ind = numpy.where(amask)[0]
+        for i in range(len(ind)):
+            x = exps_all['rho_mod'][ind[i]]
+            y = exps_all['perc_des'][ind[i]]
+            exp_id = exps_all['id'][ind[i]]
+            subdelta = x - exps_all['density_kgm3'][ind[i]]
+            m = numpy.where(subdelta==udeltas)[0][0]
 
-            # Get density and percent des/asc values for animal
-            amask = exps_all['animal'] == a
-            labels = exps_all['id'][amask]
+            text = ax1.annotate(exp_id, xy=(x,y), xytext=(xa[i], ya[i]),
+                               color=colors[c],
+                               horizontalalignment='center',
+                               verticalalignment='center',
+                               arrowprops=arrowprops)
+        c += 1
 
-            x = exps_all['rho_mod'][amask].values
-            y = exps_all[key][amask].values
-            xa = xa_all[amask]
-            ya = ya_all[amask]
+    # Cacluate curve
+    p_opt, p_cov = scipy.optimize.curve_fit(linear, x_all, y_all)
+    xi = numpy.arange(x_all.min(), x_all.max(), 0.1)
+    yi = linear(xi, *p_opt)
+    r2 = r_squared(x_all, y_all)
+    str_eqn = '{}x + {}'.format(round(p_opt[0], 4), round(p_opt[1], 2))
+    str_r2  = r'$R^{2}$ '+str(round(r2,2))
 
-            ind = numpy.where(amask)[0]
-            for i in range(len(ind)):
-                x = exps_all['rho_mod'][ind[i]]
-                y = exps_all[key][ind[i]]
-                exp_id = exps_all['id'][ind[i]]
-                subdelta = x - exps_all['density_kgm3'][ind[i]]
-                m = numpy.where(subdelta==udeltas)[0][0]
+    ax1.plot(xi, yi, label='fit', color='grey', linestyle='dashed')
 
-                text = ax.annotate(exp_id, xy=(x,y), xytext=(xa[i], ya[i]),
-                                   color=colors[c],
-                                   horizontalalignment='center',
-                                   verticalalignment='center',
-                                   arrowprops=arrowprops)
-            c += 1
-
-        # Cacluate curve
-        p_opt, p_cov = scipy.optimize.curve_fit(linear, x_all, y_all)
-        xi = numpy.arange(x_all.min(), x_all.max(), 0.1)
-        yi = linear(xi, *p_opt)
-        r2 = r_squared(x_all, y_all)
-        str_eqn = '{}x + {}'.format(round(p_opt[0], 4), round(p_opt[1], 2))
-        str_r2  = r'$R^{2}$ '+str(round(r2,2))
-
-        ax.plot(xi, yi, label='fit', color='grey', linestyle='dashed')
-
-        # Expand ylimits to allow for annotations
-        ymin, ymax = ax.get_ylim()
-        ax.set_ylim((ymin-5.0, ymax+5.0))
-
-    # Add alpha labels
-    xpos = [0.05, 0.9]
-    ypos = [0.95, 0.95]
-    axes = add_alpha_labels([ax1, ax2], xpos=xpos, ypos=ypos, color='black')
 
     # Manually create legend using matplotlib artist proxies
     # dot size legend
@@ -187,7 +177,8 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
 
     # Plot regular artists
     leg = plt.legend(handles=prox_handles, labels=prox_labels,
-                     bbox_to_anchor=(1, 1), loc='upper left')
+                     bbox_to_anchor=(0, 1), loc='upper left',
+                     facecolor='white')
 
     # Create delta rho_mod table
     ids_str = numpy.array(['']*len(udeltas), dtype=object)
@@ -203,12 +194,34 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
         table_id += '{} :\n'.format(ids_str[i])#, udeltas[i])
         table_rho += '{:6.1f}\n'.format(udeltas[i])
 
-    ax2.annotate(table_title, xy=(1.06, 0.43), xycoords='axes fraction',
-                 fontsize=12)
-    ax2.annotate(table_id, xy=(1.15, 0.0), xycoords='axes fraction',
-                 horizontalalignment='right', fontsize=10)
-    ax2.annotate(table_rho, xy=(1.16, 0.0), xycoords='axes fraction',
-                 fontsize=10)
+    props = dict(facecolor='white', edgecolor='none', alpha=1.0)
+    ax1.annotate(table_title, xy=(0.82, 0.53), xycoords='axes fraction',
+                 fontsize=12, bbox=props)
+    ax1.annotate(table_id, xy=(0.89, 0.05), xycoords='axes fraction',
+                 horizontalalignment='right', fontsize=10, bbox=props)
+    ax1.annotate(table_rho, xy=(0.90, 0.05), xycoords='axes fraction',
+                 fontsize=10, bbox=props)
+
+    # Set x-axis attributes
+    ax1.set_xlabel(r'$\rho_{mod} \; (kg \cdot m^{-3})$')
+
+    # Set y-axis attributes ax1
+    ax1.set_ylabel('Sub-glides during dive descents $(\%)$')
+    ymax = plotutils.roundup(yi.max(), plotutils.magnitude(yi.max()))
+    min_mag = plotutils.magnitude(yi.min())
+    ymin = (yi.min() // 10**(min_mag)) * 10**(min_mag)
+    ax1.set_ylim((ymin, ymax))
+
+    # Create inverted y-axis duplicate, set y-axis attributes ax2
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Sub-glides during dive ascents $(\%)$')
+    yi_inv = 100 - yi
+    ax2.plot(xi, yi_inv, color='none')
+    ymax = plotutils.roundup(yi_inv.max(), plotutils.magnitude(yi_inv.max()))
+    min_mag = plotutils.magnitude(yi_inv.min())
+    ymin = (yi_inv.min() // 10**(min_mag)) * 10**(min_mag)
+    ax2.set_ylim((ymax, ymin))
+    ax2.grid(False)
 
     # Plot fit of all points
     fname = 'experiments_density_sgls-perc'
@@ -218,7 +231,6 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
         [ax.set_aspect('equal') for ax in [ax1, ax2]]
         plt.savefig(file_path, format=ext, bbox_inches='tight')
 
-        # TODO perhaps move out of latex to image utils repo
         latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
                                dpi=dpi)
     plt.show()
