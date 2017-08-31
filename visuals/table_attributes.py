@@ -18,13 +18,13 @@ def get_all():
     attrs = OrderedDict()
 
     # table_exps
-    title = 'Dive and glide event summary with the added effect of body density blocks.'
+    title = 'Field experiments - dive and glide event summary with the added effect of body density blocks.'
     caption = r'''Glides were identified during descent and ascent dive phases and split into sub-glides (SGL). Body densities were derived from the isotope analyses presented in Table~\ref{table_isotope}, and total modified body densities ($\rho\textsubscript{mod}$) were calculated from those with the additional effect of the attached blocks.'''
     attrs = add_attrs(attrs, 'table_exps', title, caption)
 
 
     # table_isotope
-    title = 'Percent body composition calculated using the tritiated water method.'
+    title = 'Body composition and density experiments - percent body composition summary, calculated using the tritiated water method.'
     caption = ''
     attrs = add_attrs(attrs, 'table_isotope', title, caption)
 
@@ -32,7 +32,7 @@ def get_all():
     # table_ann_feature_descr
     title = '''ANN input features obtained from various sensors attached to seals in the field experiment.'''
     caption = ''
-    attrs = add_attrs(attrs, 'table_ann_io', title, caption)
+    attrs = add_attrs(attrs, 'table_ann_feature_descr', title, caption)
 
 
     # table_ann_target_descr
