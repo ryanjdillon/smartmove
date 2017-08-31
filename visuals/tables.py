@@ -74,10 +74,10 @@ def table_isotope(name, attrs, path_table, data):
     cols['density_kgm3'] = '%.1f'
 
     names, units = utils.parse_col_txt(data.columns)
-    names = ['Experiments', 'Date', 'Animal', 'Mass', 'Water', 'Water',
+    names = ['Field experiments', 'Date', 'Animal', 'Mass', 'Water', 'Water',
              'Fat', 'Fat', 'Protein', 'Protein', 'Density']
-    units = ['', '', '', '$(kg)$', '$(L)$', '$(\%)$', '$(kg)$', '$(\%)$',
-            '$(kg)$', '$(\%)$', r'$(kg \cdot m\textsuperscript{-3})$']
+    units = ['', '', '', '$kg$', '$L$', '$\%$', '$kg$', '$\%$',
+            '$kg$', '$\%$', r'$kg \cdot m\textsuperscript{-3}$']
     headers = [names, units]
 
     table = latex.tables.write_table(path_table,
@@ -193,7 +193,7 @@ def table_ann_target_descr(name, attrs, path_table, data):
     cols['range_lipid'] = '%str'
 
     names = ['Bin', r'$\rho\textsubscript{mod}$ range', 'Lipid range']
-    units = ['', r'$(kg \cdot m\textsuperscript{-3})$', r'$(\%)$']
+    units = ['', r'$kg \cdot m\textsuperscript{-3}$', r'$\%$']
     headers = [names, units]
 
     table = latex.tables.write_table(path_table,
