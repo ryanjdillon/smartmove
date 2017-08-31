@@ -1,24 +1,6 @@
 from os.path import join as _join
 
 
-def roundup(x, order):
-    return x if x % 10**order == 0 else x + 10**order - x % 10**order
-
-
-def magnitude(x):
-    import math
-    return int(math.floor(math.log10(x)))
-
-
-def hourmin(n_seconds):
-    '''Generate a string of hours and minutes from total number of seconds'''
-
-    hours, remainder = divmod(n_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    s = '{:.0f}hr {:2.0f}min'.format(hours, minutes)
-
-    return s
-
 def compile_exp_data(path_project, field, cfg_ann):
     '''Walk root tag directory and compile derived values to dataframe
 
@@ -39,6 +21,7 @@ def compile_exp_data(path_project, field, cfg_ann):
     import numpy
     import os
     import pandas
+    from pyotelem.plots import plotutils
 
     from ..ann import pre
     from ..config import paths, fnames
@@ -86,7 +69,9 @@ def compile_exp_data(path_project, field, cfg_ann):
             start = tag['datetimes'][masks['exp']].iloc[0]
             stop = tag['datetimes'][masks['exp']].iloc[-1]
 
-            data['duration'][i] = hourmin((stop - start).total_seconds())
+            n_seconds = (stop - start).total_seconds()
+            h, m, s = plotutils.hourminsec(n_seconds)
+            data['duration'][i] = r"{:1.0f}h {:02.0f}$'$ {:02.0f}$''$".format(h, m, s)
 
             # Create string for mod type
             block_type = field.ix[i, 'block_type']
