@@ -459,6 +459,129 @@ def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
     return None
 
 
+def studyarea(path_plot):
+    import cartopy.crs as ccrs
+    from io import BytesIO
+    import matplotlib.pyplot as plt
+    from matplotlib import rcParams
+    import numpy
+    import os
+    from owslib.wms import WebMapService
+    import PIL
+    import seaborn
+
+    from . import maps
+
+    # Plotting configuration
+    rcParams.update({'figure.autolayout': True})
+    seaborn.set_context('paper')
+    sns_config = {'axes.linewidth':0.1,
+                  'xtick.color':'black', 'xtick.major.size':4.0, 'xtick.direction':'out',
+                  'ytick.color':'black', 'ytick.major.size':4.0, 'ytick.direction':'out'}
+    seaborn.set_style('white', sns_config)
+
+    # Bounding box
+    lon0 = 18.565148 # BL
+    lat0 = 69.618893 # BL
+    lon1 = 19.071205 # TR
+    lat1 = 69.768302 # TR
+
+    layer = 'Vannflate'
+    srs = 'EPSG:32634'
+
+    # Create wms object for handling WMS calls
+    url = 'http://openwms.statkart.no/skwms1/wms.topo3?'
+    wms = WebMapService(url)
+
+    # Project bounding box
+    bbox = maps.project_bbox(srs, lon0, lat0, lon1, lat1)
+
+    owslib_img = maps.get_wms_png(wms, bbox, layer, srs, width=1600, transparent=True)
+
+    # Convert binary png data to PIL Image data
+
+    color_land = (230, 230, 230, 255) # Hex color #f2f2f2
+    color_water = (153, 153, 153, 255) # Hex color #cccccc
+
+    # https://stackoverflow.com/a/43514640/943773
+
+    img = PIL.Image.open(BytesIO(owslib_img.read()))
+    land = PIL.Image.new('RGB', img.size, color_land)
+    water = PIL.Image.new('RGBA', img.size, color_water)
+    land.paste(water, mask=img.split()[3])
+
+    proj = ccrs.epsg(srs.split(':')[1])
+
+    # Create project axis and set extent to bounding box
+    ax = plt.axes(projection=proj)
+    extent = (bbox[0], bbox[2], bbox[1], bbox[3])
+    ax.set_extent(extent, proj)
+
+    # Plot projected image
+    ax.imshow(land, origin='upper', extent=extent, transform=proj)
+
+    # Project and plot Tromsø and study area positions
+    wgs84 = ccrs.Geodetic()
+
+    lon_tromso = numpy.array([18.955364])
+    lat_tromso = numpy.array([69.649197])
+
+    points = proj.transform_points(ccrs.Geodetic(), lon_tromso, lat_tromso)
+    xt = points[:,0]
+    yt = points[:,1]
+
+    lon_sa = numpy.array([18.65125])
+    lat_sa = numpy.array([69.69942])
+    points = proj.transform_points(ccrs.Geodetic(), lon_sa, lat_sa)
+    xsa = points[:,0]
+    ysa = points[:,1]
+
+    ax.scatter(xt, yt, marker='.' , color='#262626')
+    ax.scatter(xsa, ysa, marker='^' , color='#4dff4d')
+
+    # Create WGS84 axes labels with WGS84 axes positions
+    ticks_lon, xlabels = maps.map_ticks(lon0, lon1, 4)
+    ticks_lat, ylabels = maps.map_ticks(lat0, lat1, 4)
+
+    # Create list of lons/lats at axis edge for projecting ticks_lon/lats
+    lat_iter = numpy.array([lat0]*len(ticks_lon))
+
+    # Project ticks_lon/lats and set to axis labels
+    xpos = proj.transform_points(ccrs.Geodetic(), ticks_lon, lat_iter)[:,0]
+    ypos = proj.transform_points(ccrs.Geodetic(), ticks_lon, ticks_lat)[:,1]
+
+    ax.set_xticks(xpos)
+    ax.set_xticklabels(xlabels, ha='right', rotation=45)
+    ax.xaxis.tick_bottom()
+
+    ax.set_yticks(ypos)
+    ax.set_yticklabels(ylabels)
+    ax.yaxis.tick_right()
+
+    # Turn off grid for seaborn styling
+    ax.grid(False)
+
+    # Write image data if `path_plot` passed
+    if path_plot:
+        import pickle
+        # Save png of WMS data
+        filename_png = os.path.join(path_plot, '{}.png'.format(layer))
+        with open(filename_png, 'wb') as f:
+            f.write(owslib_img.read())
+        # Convert png to GEOTIFF data
+        maps.png2geotiff(filename_png, srs, bbox)
+        # Save pickle of `PIL` image data
+        file_pickle_img = os.path.join(path_plot, '{}_img.p'.format(layer))
+        pickle.dump(img, open(file_pickle_img, 'wb'))
+        # Save Cartopy plot
+        file_plot = os.path.join(path_plot, 'study_area.eps')
+        plt.savefig(file_plot, dpi=600)
+
+    plt.show()
+
+    return None
+
+
 def make_all(path_project, path_analysis):
     import os
     import pandas
@@ -513,6 +636,9 @@ def make_all(path_project, path_analysis):
     results_dataset = pandas.read_pickle(file_results_data)
     m = utils.last_monitors(results_dataset)
     plot_learning_curves(m, path_plot)
+
+    # Plot study area plot
+    studyarea(path_plot)
 
     # Plot subglide heatmaps
     plot_all_sgl_densities(path_project, cfg_ann, path_plot)
