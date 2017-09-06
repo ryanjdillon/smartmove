@@ -59,7 +59,7 @@ percent ranges.'''
 
     # table_target_stats 7
     title = '''Number of sub-glide events per target value bin with percentage of total number of compiled target values.'''
-    caption = '''There were a total of 9985 target values from all compiled sub-glides. The percentage of compiled data represents the percentage of all sub-glides in the compiled dataset classified into the associated bin number'''
+    caption = '''There were a total of 9985 target values from all compiled sub-glides. The percentage of compiled data represents the percentage of all sub-glides in the compiled dataset classified into the associated bin number.'''
     attrs = add_attrs(attrs, 'table_ann_target_stats', title, caption,
             adjustwidth=False)
 
