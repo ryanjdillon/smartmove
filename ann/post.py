@@ -1,8 +1,15 @@
 from os.path import join as _join
 
 def time_prediction(net, features):
-    import timeit
-    return timeit.timeit('net.predict(features)', number=10000, globals=locals())
+    '''
+    `timeit.timeit` returns the total time in seconds (float) to run the test,
+    not including the time used for setup. The time for each execution is the
+    total time divided by the number of executions `number`. The default value
+    for `number` is 1e6, but set here to `100000`.
+    '''
+    from timeit import timeit as tt
+    n = 100000
+    return tt('net.predict(features)', number=n, globals=locals())/n
 
 
 def calculate_precision(cm):
@@ -123,7 +130,8 @@ def process(path_project, path_analysis, cfg_ann):
     # Each loop, 100k iterations of timing
     file_test = _join(path_output, fnames['ann']['test'])
     test = pandas.read_pickle(file_test)
-    t_pred = numpy.mean([time_prediction(net, test[0][:0]) for _ in range(10)])
+    features = numpy.expand_dims(test[0][0], axis=0)
+    t_pred = time_prediction(net, features)
     post['ann']['opt']['t_pred'] = t_pred
 
     # Filesize of trained NN
