@@ -582,6 +582,44 @@ def studyarea(path_plot):
     return None
 
 
+def plot_ann_performance(cfg_ann, results_tune):
+    import matplotlib.pyplot as plt
+    import seaborn
+
+    import pandas
+
+    colors = seaborn.color_palette()
+
+    # Convert results_tune configs + acc to pandas dataframe
+    params = list(cfg_ann['net_tuning'].keys())
+    df_cfgs = pandas.DataFrame(index=range(len(results_tune)),
+            columns=params+['acc'])
+
+    for i in range(len(results_tune)):
+        for p in params:
+            df_cfgs.iloc[i][p] = results_tune['config'][i][p]
+        df_cfgs.iloc[i]['acc'] = results_tune.iloc[i]['accuracy']
+
+    df_cfgs = df_cfgs.apply(pandas.to_numeric, errors='ignore')
+
+    fig, ((ax1, ax3, ax5), (ax2, ax4, ax6)) = plt.subplots(2, 3, sharey=True)
+    axes = [ax1, ax3, ax5, ax4, ax2]
+
+    for ax, p in zip(axes, params):
+        df_cfgs.boxplot(ax=ax, column='acc', by=p)
+        ax.set_xlabel(p.title().replace('_', ' '))
+        ax.set_title('')
+
+    ax6.axis('off')
+
+    fig.texts = list()
+    ax1.set_ylabel('Accuracy (%)')
+    ax2.set_ylabel('Accuracy (%)')
+    plt.show()
+
+    return None
+
+
 def make_all(path_project, path_analysis):
     import os
     import pandas
