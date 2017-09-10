@@ -536,8 +536,15 @@ def studyarea(path_plot):
     xsa = points[:,0]
     ysa = points[:,1]
 
+    lon_ctd = numpy.array([18.65362])
+    lat_ctd = numpy.array([69.70214])
+    points = proj.transform_points(ccrs.Geodetic(), lon_ctd, lat_ctd)
+    xctd = points[:,0]
+    yctd = points[:,1]
+
     ax.scatter(xt, yt, marker='.' , color='#262626')
     ax.scatter(xsa, ysa, marker='^' , color='#4dff4d')
+    ax.scatter(xctd, yctd, marker='o' , color='#42a4f4')
 
     # Create WGS84 axes labels with WGS84 axes positions
     ticks_lon, xlabels = maps.map_ticks(lon0, lon1, 4)
