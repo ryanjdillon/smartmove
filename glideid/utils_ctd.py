@@ -255,21 +255,23 @@ def run_ctd(path_project):
     cfg_project = yamlord.read_yaml(file_cfg_project)
 
     # Project coords 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
-    lat = cfg_project['experiment']['lat']
-    lon = cfg_project['experiment']['lon']
+    lat = cfg_project['experiment']['coords']['lat']
+    lon = cfg_project['experiment']['coords']['lon']
     net_depth = cfg_project['experiment']['net_depth']
 
     ## Read data
     file_ctd_mat = os.path.join(path_project, paths['ctd'],
-                                fnames['ctd']['mat'])
+                                cfg_project['experiment']['fname_ctd'])
 
     transects = read_matlab(file_ctd_mat)
 
     # Find nearest station
     transect_key, station_idx, min_dist = find_nearest_station(lon, lat, transects)
+    print('Longitude', transects[transect_key]['lon'][station_idx][0])
+    print('Latitude', transects[transect_key]['lat'][station_idx][0])
 
     # Cacluate mean salinity above 18m
-    mean_sal = calc_mean_salinity(transects, transect_key, station_idx, max_depth)
+    mean_sal = calc_mean_salinity(transects, transect_key, station_idx, net_depth)
 
     plot_transect_data(transects)
 
