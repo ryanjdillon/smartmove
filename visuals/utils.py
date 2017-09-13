@@ -1,5 +1,20 @@
 from os.path import join as _join
 
+def crop_png(filename):
+    '''Autocrop excess white margins from PNG file
+
+    Args
+    ----
+    filename: str
+        Path and filename with extension to .png file to crop
+    '''
+    from PIL import Image
+
+    img = Image.open(filename)
+    img.crop(img.getbbox()).save(filename)
+
+    return None
+
 
 def compile_exp_data(path_project, field, cfg_ann):
     '''Walk root tag directory and compile derived values to dataframe
