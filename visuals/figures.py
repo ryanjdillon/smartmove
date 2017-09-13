@@ -313,7 +313,7 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     # Make jointplots as subplots
     # http://stackoverflow.com/a/35044845/943773
 
-    seaborn.set(style='white')
+    seaborn.set_style('white')
 
     fig = plt.figure()
 
@@ -385,35 +385,90 @@ def filt_paths(path_project, cfg_ann):
     return data_paths, exp_names
 
 
-def plot_all_sgl_densities(path_project, cfg_ann, path_plot):
+def plot_sgl_histos(path_project, cfg_ann, path_plot):
+    import matplotlib.pyplot as plt
     import numpy
-    import os
+    from os.path import join as _join
     import pandas
+    from pyotelem.plots import plotutils
+    from smartmove.config import paths, fnames
+    from smartmove.visuals.figures import filt_paths
+    import string
+    import seaborn
 
-    from .. import utils
-    from ..config import paths, fnames
+    seaborn.reset_orig()
+    seaborn.set_style('whitegrid', {'axes.linewidth':0.5,})
+
+    fig, axes = plt.subplots(1, 6, figsize=(10,5), sharey=True, sharex=True)
 
     data_paths, exp_names = filt_paths(path_project, cfg_ann)
 
-    exp_id = 1
-    for p, exp_name in zip(data_paths, exp_names):
-        fname_tag = fnames['tag']['data'].format(exp_name)
-        tag = pandas.read_pickle(_join(p, fname_tag))
-        sgls = pandas.read_pickle(_join(p, fnames['glide']['sgls']))
-        fname_mask_sgls_filt = fnames['glide']['mask_sgls_filt']
-        mask_sgls = pandas.read_pickle(_join(p, fname_mask_sgls_filt))
+    net_depth = 18
+    delta = 0.5
+    bins = numpy.arange(0, net_depth+delta, delta)
 
+    mod_dict = {'4weights':'4 Weights',
+                '4floats':'4 Floats',
+                '4neutralblocks':'4 Neutrals',
+                '2neutral':'2 Neutrals'}
+
+    exp_ind = [8, 13, 6, 12, 9, 10]
+    textstr = ''
+    for i in range(len(exp_ind)):
+        exp_name = exp_names[exp_ind[i]]
+        p = data_paths[exp_ind[i]]
+
+        sgls = pandas.read_pickle(_join(p, fnames['glide']['sgls']))
+        mask_sgls = pandas.read_pickle(_join(p, fnames['glide']['mask_sgls_filt']))
+        sgls = sgls[mask_sgls]
+
+        # time, mid between start and finish
+        sgl_x = sgls['start_idx'] + ((sgls['stop_idx']-sgls['start_idx'])/2)
+
+        # depth, calc avg over sgl time
+        sgl_y = sgls['mean_depth']
+
+        axes[i].hist(sgl_y, bins=bins, orientation='horizontal')
+
+        # Generate title for subplot
         year   = exp_name[:4]
         month  = exp_name[4:6]
         day    = exp_name[6:8]
         animal = exp_name.split('_')[3].capitalize()
         mod    = ' '.join(exp_name.split('_')[4:])
-        fmt = '{}. {}-{}-{} {} {}'
-        textstr = fmt.format(exp_id, year, month, day, animal, mod)
+        fmt = '{}, {}\n'
+        textstr += fmt.format(year, mod_dict[mod.lower()])
 
-        sgl_density(exp_name, sgls[mask_sgls], max_depth=20, textstr=textstr,
-                    path_plot=path_plot)
-        exp_id += 1
+    plotutils.add_alpha_labels(axes, xpos=0.70, ypos=0.07, color='black',
+                               fontsize=12, facecolor='white',
+                               edgecolor='white')
+
+    labels = list(string.ascii_uppercase)[:len(exp_ind)]
+    labels = ''.join(['{} :\n'.format(l) for l in labels])
+    exp_ids = ''.join(['{:2d},\n'.format(i+1) for i in exp_ind])
+
+    axes[-1].text(1.2, 1,  labels, va='top', ha='left', transform=axes[-1].transAxes)
+    axes[-1].text(1.75, 1, exp_ids, va='top', ha='right', transform=axes[-1].transAxes)
+    axes[-1].text(1.8, 1, textstr, va='top', ha='left', transform=axes[-1].transAxes)
+
+    axes[0].set_yticks(range(0, net_depth+1))
+    axes[0].set_yticklabels([str(i) if i%2==0 else '' for i in range(net_depth+1)])
+    axes[0].set_xticks([0, 50, 100, 150])
+    axes[0].set_xticklabels(['0', '', '100', ''])
+
+    fig.text(0.4, 0.04, 'No. sub-glides', ha='center')
+    axes[0].set_ylabel('Depth ($m$)')
+    plt.gca().invert_yaxis()
+    plt.subplots_adjust(right=0.7, wspace=0.2, hspace=0.2)
+
+    # Save plot
+    fname = 'subglide_histograms'
+    ext = 'eps'
+    if path_plot is not None:
+        file_path = _join(path_plot, '{}.{}'.format(fname, ext))
+        plt.savefig(file_path, format=ext, bbox_inches='tight')
+
+    plt.show()
 
     return None
 
@@ -460,6 +515,19 @@ def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
 
 
 def studyarea(path_plot):
+
+    def plot_coords(ax, proj, lon, lat, marker='o', color='black'):
+        import cartopy.crs as ccrs
+        import numpy
+
+        lon = numpy.asarray(lon)
+        lat = numpy.asarray(lat)
+        points = proj.transform_points(ccrs.Geodetic(), lon, lat)
+
+        ax.scatter(points[:,0], points[:,1], marker='.' , color=color)
+
+        return ax
+
     import cartopy.crs as ccrs
     from io import BytesIO
     import matplotlib.pyplot as plt
@@ -500,8 +568,8 @@ def studyarea(path_plot):
 
     # Convert binary png data to PIL Image data
 
-    color_land = (230, 230, 230, 255) # Hex color #f2f2f2
-    color_water = (153, 153, 153, 255) # Hex color #cccccc
+    color_land = (131, 196, 146, 255)#(230, 230, 230, 255) # Hex color #f2f2f2
+    color_water = (237, 239, 242, 255) # Hex color #cccccc
 
     # https://stackoverflow.com/a/43514640/943773
 
@@ -523,28 +591,12 @@ def studyarea(path_plot):
     # Project and plot Tromsø and study area positions
     wgs84 = ccrs.Geodetic()
 
-    lon_tromso = numpy.array([18.955364])
-    lat_tromso = numpy.array([69.649197])
-
-    points = proj.transform_points(ccrs.Geodetic(), lon_tromso, lat_tromso)
-    xt = points[:,0]
-    yt = points[:,1]
-
-    lon_sa = numpy.array([18.65125])
-    lat_sa = numpy.array([69.69942])
-    points = proj.transform_points(ccrs.Geodetic(), lon_sa, lat_sa)
-    xsa = points[:,0]
-    ysa = points[:,1]
-
-    lon_ctd = numpy.array([18.65362])
-    lat_ctd = numpy.array([69.70214])
-    points = proj.transform_points(ccrs.Geodetic(), lon_ctd, lat_ctd)
-    xctd = points[:,0]
-    yctd = points[:,1]
-
-    ax.scatter(xt, yt, marker='.' , color='#262626')
-    ax.scatter(xsa, ysa, marker='^' , color='#4dff4d')
-    ax.scatter(xctd, yctd, marker='o' , color='#42a4f4')
+    # Tromso
+    plot_coords(ax, proj, 18.955364, 69.649197, marker='o', color='#262626')
+    # Study area
+    plot_coords(ax, proj, 18.65125, 69.69942, marker='^', color='#a35d61')
+    # CTD
+    plot_coords(ax, proj, 18.65362, 69.70214, marker='o', color='#42a4f4')
 
     # Create WGS84 axes labels with WGS84 axes positions
     ticks_lon, xlabels = maps.map_ticks(lon0, lon1, 4)
@@ -589,16 +641,17 @@ def studyarea(path_plot):
     return None
 
 
-def plot_ann_performance(cfg_ann, results_tune):
+def plot_ann_performance(cfg_ann, results_tune, path_plot):
     import matplotlib.pyplot as plt
     import seaborn
 
     import pandas
 
     colors = seaborn.color_palette()
+    seaborn.set_context('notebook')
 
     # Convert results_tune configs + acc to pandas dataframe
-    params = list(cfg_ann['net_tuning'].keys())
+    params = ['hidden_nodes','hidden_layers']
     df_cfgs = pandas.DataFrame(index=range(len(results_tune)),
             columns=params+['acc'])
 
@@ -609,19 +662,27 @@ def plot_ann_performance(cfg_ann, results_tune):
 
     df_cfgs = df_cfgs.apply(pandas.to_numeric, errors='ignore')
 
-    fig, ((ax1, ax3, ax5), (ax2, ax4, ax6)) = plt.subplots(2, 3, sharey=True)
-    axes = [ax1, ax3, ax5, ax4, ax2]
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10,5))
 
-    for ax, p in zip(axes, params):
+    sub_width = list()
+    for ax, p in zip((ax1, ax2), params):
         df_cfgs.boxplot(ax=ax, column='acc', by=p)
         ax.set_xlabel(p.title().replace('_', ' '))
         ax.set_title('')
+        sub_width = ax.get_xlim()[1]
+        ax.grid(False)
 
-    ax6.axis('off')
+    #ax6.axis('off')
 
     fig.texts = list()
     ax1.set_ylabel('Accuracy (%)')
-    ax2.set_ylabel('Accuracy (%)')
+
+    if path_plot:
+        ext = 'eps'
+        fname_plot_sgl = 'hyperparameter_accuracy.{}'.format(ext)
+        file_plot_sgl = _join(path_plot, fname_plot_sgl)
+        plt.savefig(filename=file_plot_sgl)
+
     plt.show()
 
     return None
@@ -665,12 +726,14 @@ def make_all(path_project, path_analysis):
     file_cms_data = _join(path_output, fnames['ann']['cms_tune'])
     cms_tune = pandas.read_pickle(file_cms_data)
     cm_test = cms_tune['validation']['cm']
-    targets = cms_tune['validation']['targets']
+    targets = cms_tune['targets']
+    valid_targets = cms_tune['validation']['targets']
+    target_ids = [i for i in range(len(targets)) if targets[i] in valid_targets]
     tick_labels = list()
     xlabel = r'Predicted $\rho_{mod}$ bin ($kg \cdot m^{-3}$)'
     ylabel = r'Observed $\rho_{mod}$ bin ($kg \cdot m^{-3})$'
-    for i in range(len(targets)):
-        tick_labels.append('{}<='.format(targets[i]))
+    for i in range(len(valid_targets)):
+        tick_labels.append('{}: {}<='.format(target_ids[i], valid_targets[i]))
     utils_ann.plot_confusion_matrix(cm_test, tick_labels, xlabel=xlabel,
                                     ylabel=ylabel, normalize=False, title='',
                                     cmap=None, xlabel_rotation=45,
@@ -685,8 +748,13 @@ def make_all(path_project, path_analysis):
     # Plot study area plot
     studyarea(path_plot)
 
+    # Plot hyperparameter accuracy performance
+    file_results_tune = _join(path_output, fnames['ann']['tune'])
+    results_tune = pandas.read_pickle(file_results_tune)
+    plot_ann_performance(cfg_ann, results_tune, path_plot)
+
     # Plot subglide heatmaps
-    plot_all_sgl_densities(path_project, cfg_ann, path_plot)
+    plot_sgl_histos(path_project, cfg_ann, path_plot)
 
     # Plot example subglide plot
     plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True)
@@ -698,4 +766,6 @@ def make_all(path_project, path_analysis):
             fname = os.path.splitext(fig)[0]
             latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
                                    dpi='300')
+            utils.crop_png(_join(path_plot, fname+'.png'))
+
     return None
