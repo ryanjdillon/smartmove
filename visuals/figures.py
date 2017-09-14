@@ -504,13 +504,11 @@ def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
     # subglides, manually found and pass correct data indices for location
     mask_exp = mask_tag['exp']
     depths = tag['depth'].values
-    pitch_lf = tag['p_lf'].values
-    roll_lf = tag['r_lf'].values
-    heading_lf = tag['h_lf'].values
+    cutoff_str = str(cfg_ann['data']['glides']['cutoff_frq'])
+    Az_g_hf = tag['Az_g_hf_'+cutoff_str]
     plotglides.plot_sgls(mask_exp, depths, mask_tag_filt, sgls, mask_sgls_filt,
-                         pitch_lf, roll_lf, heading_lf,
-                         idx_start=259000, idx_end=260800, path_plot=path_plot,
-                         clip_x=clip_x)
+                         Az_g_hf, idx_start=259000, idx_end=260800,
+                         path_plot=path_plot, clip_x=clip_x)
     return None
 
 
