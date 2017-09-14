@@ -24,7 +24,7 @@ def table_exps(name, attrs, path_table, data):
 
     # Column names to print in table
     names = ['ID', 'Date', 'Animal', 'Mod.', 'Duration', 'Dives',
-             'Descent SGLs', 'Ascent SGLs', 'Density',
+             'Descent SGLs', 'Ascent SGLs', r'$\rho\textsubscript{seal}$',
              r'$\rho\textsubscript{mod}$']
 
     units = ['', '', '', '', '', 'No.', 'No. (\%)', 'No. (\%)',
@@ -75,7 +75,7 @@ def table_isotope(name, attrs, path_table, data):
 
     names, units = utils.parse_col_txt(data.columns)
     names = ['Field experiments', 'Date', 'Animal', 'Mass', 'Water', 'Water',
-             'Fat', 'Fat', 'Protein', 'Protein', 'Density']
+             'Fat', 'Fat', 'Protein', 'Protein', r'$\rho\textsubscript{seal}$']
     units = ['', '', '', '$kg$', '$L$', '$\%$', '$kg$', '$\%$',
             '$kg$', '$\%$', r'$kg \cdot m\textsuperscript{-3}$']
     headers = [names, units]
@@ -120,7 +120,8 @@ def table_ann_params(name, attrs, path_table, cfg_ann):
         values = cfg[keys[i]]
         values = ', '.join([str(j) for j in values])
 
-        data['Hyperparameter'].iloc[i] = keys[i].replace('_',' ')
+        k = keys[i].replace('algorithm','algo').replace('_','\\_')
+        data['Hyperparameter'].iloc[i] = k
         data['Values'].iloc[i]         = values
 
     names = data.columns
