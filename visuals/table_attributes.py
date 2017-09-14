@@ -32,8 +32,8 @@ percent ranges.'''
 
 
     # table_ann_params 3
-    title = '''Theanets ANN configuration attributes (hyperparameters).'''
-    caption = '''During the network tuning an ANN was trained and tested for all combinations of possible values for each hyperparameter. Bold faced values produced the network yielding the highest accuracy.'''
+    title = r'''Training function \textit{theantets.graph.Network.itertrain()} hyperparamters.'''
+    caption = ''' These hyperparameters were used to configure the architecture and loss function of the algorithm. During the network tuning an ANN was trained and tested for all combinations of possible values for each hyperparameter. Bold faced values produced the network yielding the highest accuracy.'''
     attrs = add_attrs(attrs, 'table_ann_params', title, caption,
             adjustwidth=False)
 
