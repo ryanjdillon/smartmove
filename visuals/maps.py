@@ -147,20 +147,50 @@ def transform_points(x, y, x0, y0, x1, y1, img_size):
     return new_x, new_y
 
 
-def map_ticks(pos0, pos1, n):
+def map_ticks(pos0, pos1, n, nsew=False):
     import numpy
 
-    def parse_degminsec(coords):
-        '''Parse descimal degrees to degrees, minutes and rounded seconds'''
-        degs = numpy.floor(coords)
-        mins, secs = numpy.divmod((coords - degs)*100, 60)
-        return degs, mins, numpy.floor(secs)
+    def parse_degminsec(dec_degs, method=None, round_secs=False):
+        '''Parse decimal degrees to degrees, minutes and seconds'''
+        degs = numpy.floor(dec_degs)
+        dec_mins = numpy.abs((dec_degs - degs) * 60)
+        mins = numpy.floor(dec_mins)
+        secs = numpy.abs((dec_mins - mins) * 60)
+
+        if method == 'lon':
+            if degs < 0:
+                nsew = 'W'
+            elif degs > 0:
+                nsew = 'E'
+            else:
+                nsew = ''
+        elif method == 'lat':
+            if degs < 0:
+                nsew = 'S'
+            elif degs > 0:
+                nsew = 'N'
+            else:
+                nsew = ''
+        else:
+            nsew = ''
+
+        if round_secs:
+            secs = numpy.round(secs)
+
+        return degs, mins, secs, nsew
 
     ticks = numpy.linspace(pos0, pos1, n)
+    print('lon lat', pos0, pos1)
 
     fmt = "{:.0f}$\degree$ {:.0f}$'$ {:.0f}$''$"
 
-    degs, mins, secs = parse_degminsec(ticks)
-    labels = [fmt.format(d, m, s) for d, m, s in zip(degs, mins, secs)]
+    degs, mins, secs, nsews = parse_degminsec(ticks, round_secs=True)
+    if nsew:
+        fmt += ' {}'
+        values = zip(degs, mins, secs, nsews)
+        labels = [fmt.format(d, m, s, ns) for d, m, s in values]
+    else:
+        values = zip(degs, mins, secs)
+        labels = [fmt.format(d, m, s) for d, m, s in values]
 
     return ticks, labels
