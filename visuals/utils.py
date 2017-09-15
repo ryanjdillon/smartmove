@@ -16,6 +16,34 @@ def crop_png(filename):
     return None
 
 
+def filt_paths(path_project, cfg_ann):
+    import numpy
+    import os
+
+    from ..config import paths, fnames
+    from .. import utils
+
+    # Get list of paths filtered by parameters in `cfg_ann['data']`
+    path_tag = _join(path_project, paths['tag'])
+    path_glide = _join(path_project, paths['glide'])
+    data_paths = list()
+    exp_names = list()
+    for p in os.listdir(path_tag):
+        path_exp = _join(path_tag, p)
+        if os.path.isdir(path_exp):
+            # Concatenate data path
+            path_glide_data = _join(path_project, path_glide, p)
+            path_subdir = utils.get_subdir(path_glide_data, cfg_ann['data'])
+            data_paths.append(_join(path_glide_data, path_subdir))
+            exp_names.append(p)
+
+    sort_ind = numpy.argsort(data_paths)
+    data_paths = numpy.array(data_paths)[sort_ind]
+    exp_names = numpy.array(exp_names)[sort_ind]
+
+    return data_paths, exp_names
+
+
 def compile_exp_data(path_project, field, cfg_ann):
     '''Walk root tag directory and compile derived values to dataframe
 

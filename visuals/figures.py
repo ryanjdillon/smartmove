@@ -357,34 +357,6 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     return None
 
 
-def filt_paths(path_project, cfg_ann):
-    import numpy
-    import os
-
-    from ..config import paths, fnames
-    from .. import utils
-
-    # Get list of paths filtered by parameters in `cfg_ann['data']`
-    path_tag = _join(path_project, paths['tag'])
-    path_glide = _join(path_project, paths['glide'])
-    data_paths = list()
-    exp_names = list()
-    for p in os.listdir(path_tag):
-        path_exp = _join(path_tag, p)
-        if os.path.isdir(path_exp):
-            # Concatenate data path
-            path_glide_data = _join(path_project, path_glide, p)
-            path_subdir = utils.get_subdir(path_glide_data, cfg_ann['data'])
-            data_paths.append(_join(path_glide_data, path_subdir))
-            exp_names.append(p)
-
-    sort_ind = numpy.argsort(data_paths)
-    data_paths = numpy.array(data_paths)[sort_ind]
-    exp_names = numpy.array(exp_names)[sort_ind]
-
-    return data_paths, exp_names
-
-
 def plot_sgl_histos(path_project, cfg_ann, path_plot):
     import matplotlib.pyplot as plt
     import numpy
@@ -392,7 +364,7 @@ def plot_sgl_histos(path_project, cfg_ann, path_plot):
     import pandas
     from pyotelem.plots import plotutils
     from smartmove.config import paths, fnames
-    from smartmove.visuals.figures import filt_paths
+    from . import utils
     import string
     import seaborn
 
@@ -401,7 +373,7 @@ def plot_sgl_histos(path_project, cfg_ann, path_plot):
 
     fig, axes = plt.subplots(1, 6, figsize=(10,5), sharey=True, sharex=True)
 
-    data_paths, exp_names = filt_paths(path_project, cfg_ann)
+    data_paths, exp_names = utils.filt_paths(path_project, cfg_ann)
 
     net_depth = 18
     delta = 0.5
@@ -481,6 +453,7 @@ def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
 
     from ..config import paths, fnames
     from .. import utils
+    from .utils import filt_paths
 
     seaborn.set_context('paper')
     seaborn.set_style('white', {'axes.linewidth':0.1, 'xtick.color':'black',
