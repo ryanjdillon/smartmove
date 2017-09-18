@@ -211,9 +211,9 @@ def run(path_project, cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, deb
                                                           cfg_filt['max_speed_delta'])
 
         # Plot filtered sgls
-        plotglides.plot_sgls(exp_mask, tag['depth'].values, mask_tag_filt, sgls,
-                             mask_sgls_filt, tag['p_lf'].values,
-                             tag['r_lf'].values, tag['h_lf'].values)
+        plotglides.plot_sgls(masks['exp'], tag['depth'].values, mask_tag_filt,
+                             sgls, mask_sgls_filt,
+                             tag['Az_g_hf_'+str(cfg_glide_exp['cutoff_frq'])])
 
         # Create output path from concatenating parameters in `cfg_filt`
         dname_filt = utils.cat_path(cfg_filt, ignore)
