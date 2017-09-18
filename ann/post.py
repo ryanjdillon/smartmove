@@ -159,8 +159,8 @@ def process(path_project, path_analysis, cfg_ann):
     rho_lo = numpy.array([bins[i] for i in bin_range])
     rho_hi = numpy.array([bins[i+1] for i in bin_range])
     # Note density is converted from kg/m^3 to g/cm^3 for `dens2lip`
-    lip_lo = pyotelem.physio_seal.dens2lip(rho_lo*0.001)['perc_lipid'].values
-    lip_hi = pyotelem.physio_seal.dens2lip(rho_hi*0.001)['perc_lipid'].values
+    lip_lo = pyotelem.physio_seal.dens2lip(rho_lo*0.001)
+    lip_hi = pyotelem.physio_seal.dens2lip(rho_hi*0.001)
 
     # Generate bin ranges as strings
     fmt_bin = r'{:7.2f} <= rho_mod < {:7.2f}'
@@ -176,7 +176,7 @@ def process(path_project, path_analysis, cfg_ann):
     post['ann']['bins']['value_diff'] = list(numpy.diff(bins))
 
     # Note density is converted from kg/m^3 to g/cm^3 for `dens2lip`
-    lipid_perc = pyotelem.physio_seal.dens2lip(bins*0.001)['perc_lipid'].values
+    lipid_perc = pyotelem.physio_seal.dens2lip(bins*0.001)
     post['ann']['bins']['lipid_perc'] = list(lipid_perc)
     post['ann']['bins']['lipid_range'] = str_lip
     post['ann']['bins']['lipid_diff'] = list(numpy.diff(lipid_perc))
