@@ -1,8 +1,9 @@
 '''
-Functions for performing glide identification on data collected from tags (i.e.
-data loggers)
+This module contains functions for performing glide identification on data
+collected from Little Leonardo dataloggers, calling functions from the Pyotelem
+library for it's main functions.
 
-This code is an adaptation of the script written by Lucia Martina Martin Lopez,
+The code is an adaptation of the script written by Lucia Martina Martin Lopez,
 presented at a body density estimation workshop at the University of Tokyo,
 Japan in May, 2016.
 '''
@@ -506,6 +507,38 @@ def _process_tag_data(path_project, cfg_project, cfg_glide, path_exp, tag,
 
 def _process_glides(cfg_glide, tag, fs_a, dives, masks, plots=True,
         debug=False):
+    '''
+    Get start and stop indices of glide events and a boolean mask of them for
+    datalogger data
+
+    Args
+    ----
+    cfg_glide: OrderedDict
+        Dictionary of configuration parameters for glide identification
+    tag: pandas.DataFrame
+        Data loaded from tag with associated sensors
+    fs_a: float
+        Sampling frequency (i.e. number of samples per second)
+    dives: pandas.DataFrame
+        Start and stop indices and attributes for dive events in `tag` data,
+        including: start_idx, stop_idx, dive_dur, depths_max, depths_max_idx,
+        depths_mean, compr_mean.
+    masks: pandas.DataFrame
+        Boolean masks for slicing identified dives, glides, and sub-glides from
+        the `tag` dataframe.
+    plots: bool
+        Switch for turning on plots (Default `True`). When activated plots for
+        reviewing signal processing will be displayed.
+
+    Returns
+    -------
+    GL: ndarray, (n, 2)
+        Start and stop indices and attributes of glide events in `tag` data,
+    masks: pandas.DataFrame
+        Boolean masks for slicing identified dives, glides, and sub-glides from
+        the `tag` dataframe.
+    '''
+
     import numpy
 
     from .. import utils
@@ -526,7 +559,28 @@ def _process_glides(cfg_glide, tag, fs_a, dives, masks, plots=True,
 
 
 def _process_sgls(tag, fs_a, dives, GL, sgl_dur):
-    '''Split sub-glides and generate summary dataframe'''
+    '''Split sub-glides and generate summary dataframe
+
+    Args
+    ----
+    tag: pandas.DataFrame
+        Data loaded from tag with associated sensors
+    fs_a: float
+        Sampling frequency (i.e. number of samples per second)
+    dives: pandas.DataFrame
+        Start and stop indices and attributes for dive events in `tag` data,
+        including: start_idx, stop_idx, dive_dur, depths_max, depths_max_idx,
+        depths_mean, compr_mean.
+    GL: ndarray, (n, 2)
+        Start and stop indices and attributes of glide events in `tag` data,
+
+    Returns
+    -------
+    sgls: pandas.DataFrame
+        Contains sub-glide summary information of `tag` data
+    data_sgl_mask: ndarray
+        Boolean mask array to slice subglides from tag data
+    '''
     import numpy
 
     import pyotelem.glides
@@ -560,29 +614,12 @@ def _process_sgls(tag, fs_a, dives, GL, sgl_dur):
 
 
 def _now_str():
-    '''Create POSIX formatted datetime string of current time'''
+    '''Create POSIX formatted datetime string of current time
+
+    Returns
+    -------
+    now: str
+        Returns current date and time as string (format: %Y-%m-%d_%H%M%S)
+    '''
     import datetime
     return datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
-
-
-def _save_config(cfg_add, file_cfg_yaml, name='parameters'):
-    '''Load analysis configuration defaults'''
-    from collections import OrderedDict
-    import datetime
-
-    import yamlord
-    from .. import utils
-
-    cfg = OrderedDict()
-
-    # Record the last date modified & git version
-    cfg['last_modified'] = _now_str()
-
-    # Get git hash and versions of dependencies
-    cfg['versions'] = utils.get_versions('smartmove')
-
-    cfg[name] = cfg_add
-
-    yamlord.write_yaml(cfg, file_cfg_yaml)
-
-    return cfg
