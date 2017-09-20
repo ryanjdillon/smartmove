@@ -1,3 +1,7 @@
+'''
+This module has functions for post-processing ANN results and preparing a
+summary of them.
+'''
 from os.path import join as _join
 
 def time_prediction(net, features):

@@ -1,11 +1,9 @@
-def get_attr(results, group, attr):
-    import numpy
-
-    n_results = len(results)
-    attrs = [results['monitors'][i][group][attr][-1] for i in range(n_results)]
-
-    return numpy.asarray(attrs)
-
+'''
+This module contains functions for preparing and running the ANN using
+Theanets. It includes functions for normalizing the data, generating
+configurations, creating the ANN algorithm, tuning the algorithm, and testing
+the dataset size's effect on accuracy.
+'''
 
 def _normalize_data(df, features, target, n_targets):
     '''Normalize features and target values
@@ -151,7 +149,19 @@ def _create_datasets(df, ind_train, ind_valid, ind_test, features, target):
 
 
 def _get_configs(tune_params):
-    '''Generate list of all possible configuration dicts from tuning params'''
+    '''Generate list of all possible configuration dicts from tuning params
+
+    Args
+    ----
+    tune_params: OrderedDict
+        Key/value(s) pairs of each parameter to be changed during ANN tuning
+
+    Returns
+    -------
+    configs: list
+        List of configuration dictionaries consisting of all various
+        permutations of the passed tune_params key/value pairs
+    '''
     import itertools
 
     #tune_idxs = list()
@@ -279,7 +289,25 @@ def create_algorithm(train, valid, config, n_features, n_targets, plots=False):
 
 
 def get_best(results, key):
-    '''Return results column 'key''s value from model with best accuracy'''
+    '''Return results column 'key''s value from model with best accuracy
+
+    Args
+    ----
+    results: pandas.DataFrame
+        A dataframe of results output from the tuning of network
+        configurations. Each row consists of results output from one
+        configuration, including the Theanets `net` object, it's configuration,
+        accuracy, and training time
+    key: str
+        The result dataframe column whose value should be returned from the
+        optimal network configuration
+
+    Returns
+    -------
+    best: pandas.Series
+        ANN results value from the optimal ANN network's result dataframe,
+
+    '''
     mask_acc = results['accuracy'] == results['accuracy'].max()
     best_idx = results['train_time'][mask_acc].idxmin()
     return results[key][best_idx]
@@ -646,25 +674,3 @@ def run(path_project, path_analysis, cfg_project, cfg_ann, sgls_all,
 
     return cfg_ann, (train, valid, test), (results_tune, results_dataset,
                                            cms_tune, cms_data)
-
-if __name__ == '__main__':
-    import yamlord
-    #cfg, results_tune, results_dataset = run()
-
-    debug = False
-    plots = False
-
-    cfg_project = yamlord.read_yaml('./cfg_project.yml')
-    cfg_ann = yamlord.read_yaml('./cfg_ann.yml')
-
-    cfg_ann, data, results = run(cfg_project, cfg_ann, debug=debug, plots=plots)
-
-    train = data[0]
-    valid = data[1]
-    test  = data[2]
-    bins  = data[3]
-
-    results_tune    = results[0]
-    results_dataset = results[1]
-    cms_tune        = results[2]
-    cms_data        = results[3]

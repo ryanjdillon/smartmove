@@ -1,3 +1,8 @@
+'''
+This module containes functions for preparing the input data of the ANN,
+including the calculation of the modified body density of the animal and
+compilation of datasets from selected experiments.
+'''
 
 def calc_mod_density(mass_kg, dens_kgm3, n_blocks, block_type):
     '''Calculate the modified density with attached blocks
@@ -141,8 +146,9 @@ def add_rhomod(file_field, file_isotope):
     isotope = pandas.read_csv(file_isotope, comment='#')
 
     # Get percent body compositions, including density - what we want
-    perc_comps = pyotelem.physio_seal.lip2dens(isotope['fat_perc'])
-    isotope['density_kgm3'] = perc_comps['density']*1000
+    # TODO pass perc_water too?
+    dens_gcm3 = pyotelem.physio_seal.lip2dens(isotope['fat_perc'])
+    isotope['density_kgm3'] = dens_gcm3 * 1000
 
     # List of columns to add to experiments from isotope-isotope data
     cols = ['mass_kg', 'length_cm', 'girth_cm','water_l', 'water_perc', 'fat_kg',

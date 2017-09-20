@@ -1,5 +1,17 @@
+'''
+This module contains utility functions for use in the ANN modules
+'''
+
 def ppickle(obj, file_path):
-    '''Write routine for saving output'''
+    '''Write routine for saving output
+
+    Args
+    ----
+    obj: object
+        Python object to be pickled
+    file_path: str
+        Path and filename of pickle file
+    '''
     import pandas
 
     with open(file_path, 'wb') as f:
@@ -15,6 +27,30 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
 
     Normalization can be applied by setting `normalize=True`.
 
+    Args
+    ----
+    cm: ndarray
+        Confusion matrix as a numpy ndarray
+    tick_labels: list of str
+        Tick labels for both y-axis and x-axis
+    xlabel: str
+        Axis label for x-axis (Default: 'Predicted')
+    ylabel: str
+        Axis label for y-axis (Default: 'Observed')
+    normalize: bool
+        Switch for normalizing the count data (i.e. from 0 to 1, Default: False)
+    title: str
+        Main title above plot (Default: '')
+    cmap: matplotlib.cmap
+        Colormap object for color coding the number of correct predictions
+    xlabel_rotation: int
+        Degrees to rotate the x-axis tick labels (Default: 0)
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+
+    Note
+    ----
     Plotting routind modified from this code: https://goo.gl/kYHMxk
     '''
     import itertools
@@ -84,13 +120,31 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
 
 
 def get_confusion_matrices(net, train, valid, targets, plots=True):
-    '''Print and return an sklearn confusion matrix from the input net'''
+    '''Print and return an sklearn confusion matrix from the input net
+
+    Args
+    ----
+    net: theanets.Classifier
+        Theanets feedfoward classifier object (i.e. the ANN object)
+    train: tuple of ndarrays
+        Train data set tuple of the input features (train[0]), and their target
+        values (train[1]).
+    valid: tuple of ndarrays
+        Validation data set tuple of the input features (valid[0]), and their
+        target values (valid[1]).
+    test: tuple of ndarrays
+        Test data set tuple of the input features (test[0]), and their target
+        values (test[1]).
+
+    Returns
+    -------
+    cms: OrderedDict
+        Dictionary of confusion matrices for the 'training' and 'validation'
+        data sets.
+    '''
     from collections import OrderedDict
     import numpy
     import sklearn.metrics
-
-    # TODO separate plot from this routine, and dict creation, perform in
-    # calling routine
 
     # Show confusion matrices on the training/validation splits.
     cms = OrderedDict()
