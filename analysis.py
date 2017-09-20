@@ -3,12 +3,6 @@ from pandas import read_pickle as _rpickle
 
 class Analysis(object):
     '''Smartmove helper class for running analyses and output to project path
-
-    Args
-    ----
-    path_project: str
-        Path to project directory created with `smartmove.create_project()`
-        method.
     '''
 
     def __init__(self, path_project, sgl_dur=2):
@@ -16,6 +10,9 @@ class Analysis(object):
 
         Args
         ----
+        path_project: str
+            Path to project directory created with `smartmove.create_project()`
+            method.
         sgl_dur: int
             Duration of sub-glide splits (seconds, Defaults to `2`)
         '''
@@ -65,6 +62,7 @@ class Analysis(object):
         return None
 
     def _update_ann_analyses(self):
+        '''Update list of available ANN analyses'''
         import os
 
         from .config import paths, fnames
@@ -178,6 +176,7 @@ class Analysis(object):
         return None
 
     def make_figures(self):
+        '''Generate figures used in Smartmove paper'''
         from . import visuals
 
         visuals.figures.make_all(self.path_project, self.current_ann)
@@ -185,16 +184,24 @@ class Analysis(object):
         return None
 
     def make_tables(self):
+        '''Generate tables used in Smartmove paper
+
+        Note
+        ----
+        The following tables require manual adjustments:
+        * `table_ann_params`
+        * `table_ann_target_descr`
+
+        The table `table_ann_feature_descr` is created entirely manually.
+        '''
         from . import visuals
-        # NOTE the following tables require manual adjustments:
-        # `table_ann_params`, `table_ann_target_descr`
-        # The table `table_ann_feature_descr` is created entirely manually.
 
         visuals.tables.make_all(self.path_project, self.current_ann)
 
         return None
 
     def tex_compile(self, path_tex):
+        '''Helper function to compile all .tex in a path and convert to png'''
         import os
 
         from .config import paths, fnames
