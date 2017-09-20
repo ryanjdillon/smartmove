@@ -1,3 +1,6 @@
+'''
+This module contains utility functions using in Smartmove
+'''
 
 def mask_from_noncontiguous_indices(n, start_ind, stop_ind):
     '''Create boolean mask from start stop indices of noncontiguous regions
@@ -27,7 +30,18 @@ def mask_from_noncontiguous_indices(n, start_ind, stop_ind):
 
 
 def get_n_lines(file_path):
-    '''Get number of lines by calling bash command wc'''
+    '''Get number of lines by calling bash command wc
+
+    Args
+    ----
+    file_path: str
+        File whose lines to count
+
+    Returns
+    -------
+    n_lines: int
+        Number of lines in file
+    '''
     import os
     import subprocess
 
@@ -100,7 +114,15 @@ def get_githash(hash_type):
 
 
 def symlink(src, dest):
-    '''Failsafe creation of symlink if symlink already exists'''
+    '''Failsafe creation of symlink if symlink already exists
+
+    Args
+    ----
+    src: str
+        Path or file to create symlink to
+    dest: str
+        Path of new symlink
+    '''
     import os
 
     # Attempt to delete existing symlink
@@ -204,6 +226,20 @@ def _parse_subdir(path):
 
 
 def get_subdir(path, cfg):
+    '''Get path to glide output data for a given `cfg_glide`
+
+    Args
+    ----
+    path: str
+        Tag data parent path
+    cfg: OrderedDict
+        Composite dictions of cfg dicts
+
+    Returns
+    -------
+    path_data: str
+        Absolute path to glide data output path
+    '''
     import os
 
     import pyotelem
@@ -256,7 +292,36 @@ def get_subdir(path, cfg):
 
 def filter_sgls(n_samples, exp_ind, sgls, max_pitch, min_depth,
         max_depth_delta, min_speed, max_speed, max_speed_delta):
-    '''Create mask filtering only glides matching criterea'''
+    '''Create mask filtering only glides matching criterea
+    
+    Args
+    ----
+    n_samples: int
+        Total number of samples in tag data
+    exp_ind: ndarray
+        Boolean array to slice tag data to only experimental period
+    sgls: 
+        
+    max_pitch: float
+        Maximum allowable pitch during sub-glide
+    min_depth: float
+        Minimum allowable depth during sub-glide
+    max_depth_delta: float
+        Maximum allowable change in depth during sub-glide
+    min_speed: float
+        Minimum allowable speed during sub-glide
+    max_speed: float
+        Maximum allowable speed during sub-glide
+    max_speed_delta: float
+        Maximum allowable change in speed during sub-glide
+
+    Returns
+    -------
+    mask_data_sgl: ndarray
+        Boolean mask to slice tag dataframe to filtered sub-glides
+    mask_sgls: ndarray
+        Boolean mask to slice sgls dataframe to filtered sub-glides
+    '''
     import numpy
 
     import pyotelem
