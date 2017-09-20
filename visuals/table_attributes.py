@@ -1,5 +1,11 @@
+'''
+This module has functions for generating attribute dictionaries to be passed to
+table generation functions, which have fields for title, caption, notes,
+adjustwidht, and extrarowheight.
+'''
 
 def get_all():
+    '''Generate the attrs dict with table attributes'''
     from collections import OrderedDict
 
     def add_attrs(attrs, name, title, caption, notes=None, adjustwidth=True):

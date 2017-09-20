@@ -1,7 +1,28 @@
+'''
+This module contains functions for producing LaTeX tables for the Smartmove
+paper.
+'''
 from os.path import join as _join
 
 def table_exps(name, attrs, path_table, data):
-    '''
+    '''Summary table of the experiments with associated sub-glides and rho_mod
+
+    Args
+    ----
+    name: str
+        Table name, used as filename and LaTeX label
+    attrs: OrderedDict
+        Dictionary with fields: title, caption, notes, adjustwidht, and
+        extrarowheight parameters for table generation.
+    path_table: str
+        Path and filename of table to be saved
+    data: pandas.DataFrame
+        Dataframe of data for all field experiments
+
+    Returns
+    -------
+    table: str
+        LaTeX table in string format
     '''
     from collections import OrderedDict
 
@@ -50,6 +71,25 @@ def table_exps(name, attrs, path_table, data):
 
 
 def table_isotope(name, attrs, path_table, data):
+    '''Summary table of the experiments with associated sub-glides and rho_mod
+
+    Args
+    ----
+    name: str
+        Table name, used as filename and LaTeX label
+    attrs: OrderedDict
+        Dictionary with fields: title, caption, notes, adjustwidht, and
+        extrarowheight parameters for table generation.
+    path_table: str
+        Path and filename of table to be saved
+    data: pandas.DataFrame
+        Dataframe of data for all isotope experiments
+
+    Returns
+    -------
+    table: str
+        LaTeX table in string format
+    '''
     from collections import OrderedDict
 
     from . import latex
@@ -98,6 +138,25 @@ def table_isotope(name, attrs, path_table, data):
 
 
 def table_ann_params(name, attrs, path_table, cfg_ann):
+    '''Table listing each hyperparameter used in ANN tuning and their values
+
+    Args
+    ----
+    name: str
+        Table name, used as filename and LaTeX label
+    attrs: OrderedDict
+        Dictionary with fields: title, caption, notes, adjustwidht, and
+        extrarowheight parameters for table generation.
+    path_table: str
+        Path and filename of table to be saved
+    cfg_ann: OrderedDict
+        Configuration dictionary for the ANN module
+
+    Returns
+    -------
+    table: str
+        LaTeX table in string format
+    '''
     from collections import OrderedDict
     import pandas
 
@@ -145,6 +204,25 @@ def table_ann_params(name, attrs, path_table, cfg_ann):
 
 
 def table_ann_feature_stats(name, attrs, path_table, data):
+    '''Summary table of basic stats for all input features
+
+    Args
+    ----
+    name: str
+        Table name, used as filename and LaTeX label
+    attrs: OrderedDict
+        Dictionary with fields: title, caption, notes, adjustwidht, and
+        extrarowheight parameters for table generation.
+    path_table: str
+        Path and filename of table to be saved
+    data: pandas.DataFrame
+        Dataframe with min, max, mean columns for each input feature
+
+    Returns
+    -------
+    table: str
+        LaTeX table in string format
+    '''
     from collections import OrderedDict
 
     from . import latex
@@ -181,6 +259,25 @@ def table_ann_feature_stats(name, attrs, path_table, data):
 
 
 def table_ann_target_descr(name, attrs, path_table, data):
+    '''Table of target value bins with associated density and lipid ranges
+
+    Args
+    ----
+    name: str
+        Table name, used as filename and LaTeX label
+    attrs: OrderedDict
+        Dictionary with fields: title, caption, notes, adjustwidht, and
+        extrarowheight parameters for table generation.
+    path_table: str
+        Path and filename of table to be saved
+    data: pandas.DataFrame
+        Dataframe with bins columns for their density and lipid ranges
+
+    Returns
+    -------
+    table: str
+        LaTeX table in string format
+    '''
     from collections import OrderedDict
 
     from . import latex
@@ -215,6 +312,26 @@ def table_ann_target_descr(name, attrs, path_table, data):
 
 
 def table_ann_target_stats(name, attrs, path_table, data):
+    '''Summary table of basic stats for target value bins
+
+    Args
+    ----
+    name: str
+        Table name, used as filename and LaTeX label
+    attrs: OrderedDict
+        Dictionary with fields: title, caption, notes, adjustwidht, and
+        extrarowheight parameters for table generation.
+    path_table: str
+        Path and filename of table to be saved
+    data: pandas.DataFrame
+        Dataframe with columns for the number of sub-glides and percentage of
+        compiled data for each bin
+
+    Returns
+    -------
+    table: str
+        LaTeX table in string format
+    '''
     from collections import OrderedDict
 
     from . import latex
@@ -249,6 +366,16 @@ def table_ann_target_stats(name, attrs, path_table, data):
 
 
 def make_all(path_project, path_analysis):
+    '''Load data and generate all tables
+
+    Args
+    ----
+    path_project: str
+       Path to project directory created with `smartmove.create_project()`
+       method.
+    path_analysis:
+        The directory name of the ANN analysis to produce plots for
+    '''
     import numpy
     import os
     import pandas
@@ -272,9 +399,6 @@ def make_all(path_project, path_analysis):
     path_table = _join(path_project, 'paper/tables')
     os.makedirs(path_table, exist_ok=True)
 
-    # http://stackoverflow.com/a/6605085/943773
-    # TODO add duration (h) and tissue density (kg/m^3)
-
     # Load field and isotop data
     file_field   = _join(path_project, paths['csv'], fnames['csv']['field'])
     file_isotope = _join(path_project, paths['csv'], fnames['csv']['isotope'])
@@ -286,7 +410,7 @@ def make_all(path_project, path_analysis):
     # Create isotope experiments table
     ignore_isotope = ['length', 'girth', 'contributer1', 'contributer2', 'notes']
     name_isotope   = table_isotope.__name__
-    # TODO remove once data cleaned
+    # Ensure only rows with an ID are added to the table
     isotope = isotope[~numpy.isnan(isotope['id'])]
     isotope = utils.filter_dataframe(isotope, ignore_isotope)
     table_isotope(name_isotope, table_attrs[name_isotope], path_table, isotope)

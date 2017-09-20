@@ -1,6 +1,21 @@
+'''
+This modules contains plotting rouines for exploring the tag dataframes
+'''
 
-def compare_tags(path_project, cfg_experiments, param, singles=False):
+def compare_tags(path_project, cfg_experiments, param, show_single=False):
     '''Compare data accross data files in acclerometer data folder
+
+    Args
+    ----
+    path_project: str
+       Path to project directory created with `smartmove.create_project()`
+       method.
+    cfg_experiments: OrderedDict
+        Dictions of start/stop indices for experimental period in tag data
+    param: str
+        Then name of the column in the tag dataframe to plot
+    show_single: bool
+        Switch to show a single plot for each tag dataframe (Default: False)
     '''
     import matplotlib
     matplotlib.use('Agg')
@@ -59,7 +74,7 @@ def compare_tags(path_project, cfg_experiments, param, singles=False):
 
                     plt.plot(data, label=d, color=colors[c])
 
-                    if singles:
+                    if show_single:
                         plt.legend()
                         plt.show()
             c += 1
@@ -68,7 +83,7 @@ def compare_tags(path_project, cfg_experiments, param, singles=False):
     print('Max {}: {} {}'.format(param, max_exp, max_val))
     print('Min index: {} {}'.format(idx_exp, idx_val))
 
-    if not singles:
+    if not show_single:
         plt.legend()
         plt.show()
 

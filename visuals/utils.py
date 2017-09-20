@@ -1,3 +1,7 @@
+'''
+This module contains utility functions for producing the figures and tables,
+primarily compiling the data for them to use.
+'''
 from os.path import join as _join
 
 def crop_png(filename):

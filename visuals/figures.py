@@ -1,44 +1,23 @@
 '''
-from pyotelem.plots.plotutils import add_alpha_labels
-# Add alpha labels
-xpos = [0.05, 0.9]
-ypos = [0.95, 0.95]
-axes = add_alpha_labels([ax1, ax2], xpos=xpos, ypos=ypos, color='black')
-
-{'axes.axisbelow': True,
- 'axes.edgecolor': '.8',
- 'axes.facecolor': 'white',
- 'axes.grid': True,
- 'axes.labelcolor': '.15',
- 'axes.linewidth': 1.0,
- 'figure.facecolor': 'white',
- 'font.family': [u'sans-serif'],
- 'font.sans-serif': [u'Arial',
-  u'DejaVu Sans',
-  u'Liberation Sans',
-  u'Bitstream Vera Sans',
-  u'sans-serif'],
- 'grid.color': '.8',
- 'grid.linestyle': u'-',
- 'image.cmap': u'rocket',
- 'legend.frameon': False,
- 'legend.numpoints': 1,
- 'legend.scatterpoints': 1,
- 'lines.solid_capstyle': u'round',
- 'text.color': '.15',
- 'xtick.color': '.15',
- 'xtick.direction': u'out',
- 'xtick.major.size': 0.0,
- 'xtick.minor.size': 0.0,
- 'ytick.color': '.15',
- 'ytick.direction': u'out',
- 'ytick.major.size': 0.0,
- 'ytick.minor.size': 0.0}
+This module contains functions for generating individual plots for the smartmove
+paper, as well as a function to load the necessary data and call them all
 '''
 from os.path import join as _join
 _linewidth = 0.5
 
 def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
+    '''Plot percentage of sgls during descent and ascent against rho_mod
+
+    Args
+    ----
+    exps_all: pandas.DataFrame
+        Dataframe of experiments with added rho_mod
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+    dpi: int
+        DPI of saved plot (Default: 300)
+    '''
     import numpy
     import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
@@ -245,6 +224,9 @@ def plot_learning_curves(m, path_plot=None):
     ----
     m: dict()
         Dict of `train` and `valid` dicts with `err`, `loss`, and `acc`
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
     '''
     import matplotlib.pyplot as plt
     import numpy
@@ -295,7 +277,28 @@ def plot_learning_curves(m, path_plot=None):
 
 
 def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
-    '''Plot density of subglides over time for whole exp, des, and asc'''
+    '''Plot density of subglides over time for whole exp, des, and asc
+
+    Args
+    ----
+    exp_name: str
+        The experiment name
+    sgls: pandas.DataFrame
+        A dataframe of all subglide data compiled from the glide identification
+        performed by `glideid`.
+    max_depth: float
+        Maximum depth of the seal pen
+    textstr: str
+        Test to add as a notation to the top left of the plot (i.e. exp info)
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+
+    Note
+    ----
+    Make jointplots as subplots:
+    http://stackoverflow.com/a/35044845/943773
+    '''
     import seaborn
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FuncFormatter, ScalarFormatter
@@ -303,15 +306,6 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     from pyotelem.plots import plotutils
 
     from . import utils
-
-    # TODO add A/ B, bottom left
-    # TODO move textbox bottom right
-    # TODO set limits for density the same
-    # TODO Update xaxis, units time elapsed
-    # TODO save as svg
-
-    # Make jointplots as subplots
-    # http://stackoverflow.com/a/35044845/943773
 
     seaborn.set_style('white')
 
@@ -335,11 +329,6 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
     mf2 = FuncFormatter(plotutils.nsamples_to_hourmin)
     g.fig.axes[0].xaxis.set_major_formatter(mf2)
 
-    ## TODO add colorbar
-    ## http://stackoverflow.com/a/29909033/943773
-    #cax = g.fig.add_axes([1, 0.35, 0.01, 0.2])
-    #plt.colorbar(cax=cax)
-
     # Add text annotation top left if `textstr` passed
     if textstr:
         props = dict(facecolor='none', edgecolor='none', alpha=0.1)
@@ -358,6 +347,27 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
 
 
 def plot_sgl_histos(path_project, cfg_ann, path_plot):
+    '''Plot histograms of number of sub-glides at depth
+
+    Args
+    ----
+    path_project: str
+       Path to project directory created with `smartmove.create_project()`
+       method.
+    cfg_ann: OrderedDict
+        Dictionary of configuration parameters for the ANN
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+
+    Note
+    ----
+    This function is hardcoded to produce plots for the smartmove experiment ids with
+    python indices of 8, 13, 6, 12, 9, and 10, based on the results of the
+    glide identification paramerts used in the paper. This needs to be
+    generalized for plotting other combinations of experiments.
+    '''
+
     import matplotlib.pyplot as plt
     import numpy
     from os.path import join as _join
@@ -446,6 +456,28 @@ def plot_sgl_histos(path_project, cfg_ann, path_plot):
 
 
 def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
+    '''Plot highlighted sub-glides
+
+    Args
+    ----
+    path_project: str
+       Path to project directory created with `smartmove.create_project()`
+       method.
+    cfg_ann: OrderedDict
+        Dictionary of configuration parameters for the ANN
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+    clip_x: bool
+        Switch to clip values to those within the experimental period
+
+    Note
+    ----
+    This function is hardcoded to plot the experiment id 0 from index 259000 to
+    260800. This was done to get a good representation of sub-glides at a
+    decent resolutions. If different glide identification configration
+    parameters are used, this will likely need to be changed.
+    '''
     import numpy
     from pandas import read_pickle
     from pyotelem.plots import plotglides
@@ -486,8 +518,17 @@ def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
 
 
 def studyarea(path_plot):
+    '''Create a plot of the study area used in the Smartmove paper
+
+    Args
+    ----
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+    '''
 
     def plot_coords(ax, proj, lon, lat, marker='o', color='black'):
+        '''Plot points at specified lon(s) and lat(s)'''
         import cartopy.crs as ccrs
         import numpy
 
@@ -613,6 +654,18 @@ def studyarea(path_plot):
 
 
 def plot_ann_performance(cfg_ann, results_tune, path_plot):
+    '''Plot accuracy against the number of hidden nodes and layers
+
+    Args
+    ----
+    cfg_ann: OrderedDict
+        Dictionary of configuration parameters for the ANN
+    results_tune: pandas.DataFrame
+        Results dataframe from the tuning of the ANN
+    path_plot: str
+        Path and filename for plot to be saved. If 'None', no plot will be
+        saved (Defualt: None)
+    '''
     import matplotlib.pyplot as plt
     import seaborn
 
@@ -660,6 +713,16 @@ def plot_ann_performance(cfg_ann, results_tune, path_plot):
 
 
 def make_all(path_project, path_analysis):
+    '''Load data and generate all plots
+
+    Args
+    ----
+    path_project: str
+       Path to project directory created with `smartmove.create_project()`
+       method.
+    path_analysis:
+        The directory name of the ANN analysis to produce plots for
+    '''
     import os
     import pandas
     import yamlord
@@ -693,7 +756,6 @@ def make_all(path_project, path_analysis):
     plot_sgls_tmbd(exps_all, path_plot=path_plot)
 
     # Plot confusion matrix
-    # TODO CM key named validation in smartmove, should change with refactoring
     file_cms_data = _join(path_output, fnames['ann']['cms_tune'])
     cms_tune = pandas.read_pickle(file_cms_data)
     cm_test = cms_tune['validation']['cm']
