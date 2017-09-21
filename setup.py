@@ -29,7 +29,7 @@ setup(
         'numpy==1.13.1',
         'matplotlib==2.0.2',
         'yamlord==0.4',
-        'pylleo==0.1',
+        'pylleo==0.3',
         'pyotelem==0.1',],
     include_package_data=True,
     keywords=['datalogger','accelerometer','biotelemetry'],
