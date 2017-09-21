@@ -23,7 +23,7 @@ tools now.
 .. |save| image:: /images/matplotlib/button_save.png
 
 +----------+-------------------------------------------+
-| **Icon** | **Bokeh documentation description**       |
+| **Icon** | **Matplotlib tool description**           |
 +----------+-------------------------------------------+
 | |home|   | Reset the original view of the plot       |
 +----------+-------------------------------------------+
