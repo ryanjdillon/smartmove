@@ -207,9 +207,9 @@ def create_algorithm(train, valid, config, n_features, n_targets, plots=False):
     monitors: dict
         Dictionary of "monitor" objects produced during network training
         Contains two labels 'train' and 'valid' with the following attributes:
-            - 'loss': percentage from loss function (default: cross-entropy)
-            - 'err': percentage of error (default: )
-            - 'acc': percentage of accuracy (defualt: true classifications)
+        - 'loss': percentage from loss function (default: cross-entropy)
+        - 'err': percentage of error (default: )
+        - 'acc': percentage of accuracy (defualt: true classifications)
     '''
     from collections import OrderedDict
     import theanets
