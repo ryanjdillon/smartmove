@@ -10,18 +10,43 @@ is written as general as was possible during the project that will hopefully be
 easily extended and applied in future projects.
 
 Installation
-============
+------------
 
 .. code:: bash
 
     pip install git@github.com:ryanjdillon/smartmove.git
 
 Documentation
-=============
-Documentation can be found at Read the Docs
+--------------
+The full documentation can be found `here <http://smartmove.readthedocs.io/en/latest/index.html>`_ at Read the Docs. 
+
+Quickstart
+----------
+
+.. code:: python
+
+    import smartmove
+    smartmove.create_project('./')
+    
+    # Now copy Little Leo data to `data_tag`, csv data to `data_csv`, and CTD data to `data_ctd`
+    # Then...
+    
+    # Setup your analysis helper
+    a = smartmove.Analysis('./')
+    
+    # Run the glide identification
+    a.run_glides()
+    
+    # Run the ANN training
+    a.run_ann()
+    
+    # Make the figures and tables for the paper
+    a.make_tables()
+    a.make_figures()
+
 
 Contributers
-=================
+------------
 
   * **Ryan J. Dillon** - All neural network code (using the theanets_ python
     package), CTD, and plotting code. Python translations of glide identification code.
@@ -38,7 +63,7 @@ Contributers
     string of the routines in which it was used.
 
 Thanks
-======
+-------
 The `theanets`_ package was used for implementing the aritifical neural network
 and is great work. Thanks `Leif Johnson`__!
 
