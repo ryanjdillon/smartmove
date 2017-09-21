@@ -1,74 +1,96 @@
-Pre-processing data
-===================
+Project setup
+==============
 
-You must first create a directory for your project with the data to be
-processed. After the directories and data have been setup, you will configure
-the code to use this project directory for your analysis.
+Creating the project directory
+------------------------------
 
-.. codeblock:: bash
+`smartmove` uses a series of configuration YAML files and a pre-defined
+directory structure for input and output data files. All of these are located
+in a project directory, which you define when you create your `smartmove`
+project.
+
+First create a directory to use as your `smartmove` project directory:
+
+.. code::
+
+    mkdir /home/<user>/smartmove_project
+
+Open the `IPython` interpretor:
+
+.. code::
+
+    cd ~/opt
+    IPython3
+
+Then import `smartmove` and use the `smartmove.create_project()` method to create the necessary subdirectories and configuration files used in the smartmove analyses.
+
+.. code:: python
+
+    import smartmove
+
+    path_project = '/home/<user>/smartmove_project'
+    smartmove.create_project(path_project)
+
+The configuration YAML files and necessary directories will then be created in
+your project directory, and you should receive a message instructing you to
+copy the necessary data files to their respective directories.
+
+**Example project directory structure**
+
+.. code::
+
     project directory
-    ├── data_accelerometer
-    │   ├── 20150306_W190-PD3GT_34839_Notag_Control
-    │   ├── 20150311_W190-PD3GT_34839_Skinny_Control
-    │   ├── 20150314_W190PD3GT_34839_Skinny_2neutrals
-    │   ├── 20150317_W190PD3GT_34839_Skinny_4Floats
-    │   ├── 20150318_W190PD3GT_34839_Notag_2neutrals
-    │   ├── 20150320_W190PD3GT_34839_Skinny_4weights
-    │   └── speed_calibrations.csv
+    ├── cfg_ann.yml
+    ├── cfg_experiments.yml
+    ├── cfg_glide.yml
+    ├── cfg_project.yml
+    ├── cfg_subglide-filter.yml
+    ├── data_csv
+    ├── data_ctd
+    ├── data_glide
+    ├── data_tag
+    └── model_ann
+
+Copying data to the project directory
+-------------------------------------
+
+.. note:: The `propeller_calibrations.csv` file is for calibration of the
+    propeller sensor data from rotations to units of *m s^-2*, and the
+    `cal.yml` files in the Little Leonardo data directories are used by
+    `pylleo` for calibrating the accelerometer sensor data to units of gravity.
+
+    See the `pylleo` `documentation
+    <http://pylleo.readthedocs.io/en/latest/calibration.html#calibration>`_ for
+    more information on performing these calibrations and the naming of data
+    files.
+
+The CSV files for field experiments, isotope experiments, and propeller
+calibrations should be placed in the `data_csv` directory, the matlab file with
+CTD measurements should be placed in the `data_ctd` directory, and the
+directories containing Little Leonardo data should be placed in the `data_tag`
+directory.
+
+.. code::
+
+    project directory
     ├── data_csv
     │   ├── field_experiments.csv
-    │   └── isotope_experiments.csv
-    └── data_ctd
-
-The `data_accelerometer` should contain a data directory for each experiment
-and its associated output files from the Little Leonardo dataloggers. 
-
-These files should be named with the following naming convention::
-
-    <date>_<tag model>_<tag serial>_<animal_name>_<modification>_suffix.TXT
-
-
-The directory and file names are used by the program for processing, so it is
-important that these are named correctly. Below is an example of how the
-contents of a Little Leonardo data directory should look:
-
-.. codeblock:: bash
-    ./20160418_W190PD3GT_34840_Skinny_2Neutral
-    ├── 20160418_W190PD3GT_34840_Skinny_2Neutral-Acceleration-X.TXT
-    ├── 20160418_W190PD3GT_34840_Skinny_2Neutral-Acceleration-Y.TXT
-    ├── 20160418_W190PD3GT_34840_Skinny_2Neutral-Acceleration-Z.TXT
-    ├── 20160418_W190PD3GT_34840_Skinny_2Neutral-Depth.TXT
-    ├── 20160418_W190PD3GT_34840_Skinny_2Neutral-Propeller.TXT
-    └── 20160418_W190PD3GT_34840_Skinny_2Neutral-Temperature.TXT
-
-
-Calibrate little leonardo data
-------------------------------
-Before running the glide identification program, the acceleration data must be calibrated to units of `g` (acceleration to gravity at Earths surface, i.e. 9.80665 m/s^2). There is a script in the `pylleo` which runs a `bokeh` web application to facilitate doing this.
-
-For further information on how to use the calibration web application, please
-see the calibration section of the `pylleo` documentation.
-
-.. codeblock:: bash
-    cd <project>/data_acceleration/20160418_W190PD3GT_34840_Skinny_2Neutral
-    bokeh serve --show bokeh_calibration.py --args W190PD3GT 34839 1 ./
-
-
-The following files will be created in the experiments data directory:
-
-.. codeblock:: bash
-    ./20160418_W190PD3GT_34840_Skinny_2Neutral
-    ├── cal.yml
-    ├── meta.yml
-    └── pydata_20160418_W190PD3GT_34840_Skinny_2Neutral.p
-
-
-Perform glide identification
-----------------------------
-From the glide directory
-
-Configure neural network model
-------------------------------
-
-Run neural network model
-------------------------
+    │   ├── isotope_experiments.csv
+    │   └── propeller_calibrations.csv
+    ├── data_ctd
+    │   └── kaldfjorden2016_inner.mat
+    └── data_tag
+        ├── 20150306_W190PD3GT_34839_Notag_Control
+        ├── 20150310_W190PD3GT_34839_Notag_Control
+        ├── 20150311_W190PD3GT_34839_Skinny_Control
+        ├── 20150314_W190PD3GT_34839_Skinny_2neutralBlocks
+        ├── 20150315_W190PD3GT_34839_Notag_Control
+        ├── 20150316_W190PD3GT_34839_Skinny_4weighttubes_2Blocks
+        ├── 20150317_W190PD3GT_34839_Skinny_4Floats
+        ├── 20150318_W190PD3GT_34839_Notag_2neutrals
+        ├── 20150320_W190PD3GT_34839_Skinny_4weights
+        ├── 20150323_W190PD3GT_34839_Skinny_4NeutralBlocks
+        ├── 20160418_W190PD3GT_34840_Skinny_2Neutral
+        ├── 20160419_W190PD3GT_34840_Skinny_2Weighted
+        ├── 20160422_W190PD3GT_34840_Skinny_4Floats
+        └── 20160425_W190PD3GT_34840_Skinny_4Weights
