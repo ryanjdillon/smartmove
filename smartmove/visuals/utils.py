@@ -177,6 +177,14 @@ def compile_exp_data(path_project, field, cfg_ann):
 
     field_all = pandas.DataFrame(data)
 
+    # Digitize animals
+    animals = sorted(numpy.unique(field_all['animal']), reverse=True)
+    i = 1
+    for a in animals:
+        ind = numpy.where(field_all['animal'] == a)
+        field_all.loc[field_all.index[ind], 'animal'] = i
+        i += 1
+
     for key in field_all.columns:
         try:
             field_all.ix[:,key] = pandas.to_numeric(field_all[key])

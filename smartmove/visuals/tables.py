@@ -34,7 +34,7 @@ def table_exps(name, attrs, path_table, data):
 
     cols['id']           = '%.0f'
     cols['date']         = '%str'
-    cols['animal']       = '%str'
+    cols['animal']       = '%.0f'
     cols['mod_str']      = '%str'
     cols['duration']     = '%str'
     cols['n_dives']      = '%.0f'
@@ -101,7 +101,7 @@ def table_isotope(name, attrs, path_table, data):
     #cols['id']           = '%.0f'
     cols['experiments']  = '%str'
     cols['date']         = '%str'
-    cols['animal']       = '%str'
+    cols['animal']       = '%.0f'
     cols['mass_kg']      = '%.1f'
     #cols['length_cm']    = '%.0f'
     #cols['girth_cm']     = '%.0f'
@@ -403,6 +403,13 @@ def make_all(path_project, path_analysis):
     file_field   = _join(path_project, paths['csv'], fnames['csv']['field'])
     file_isotope = _join(path_project, paths['csv'], fnames['csv']['isotope'])
     field, isotope = pre.add_rhomod(file_field, file_isotope)
+    # Digitize animals
+    animals = sorted(numpy.unique(isotope['animal']), reverse=True)
+    i = 1
+    for a in animals:
+        ind = numpy.where(isotope['animal'] == a)
+        isotope.loc[isotope.index[ind], 'animal'] = i
+        i += 1
 
     # Compile experiments adding columns necessary for tables/figures
     exps_all = utils.compile_exp_data(path_project, field, cfg_ann)

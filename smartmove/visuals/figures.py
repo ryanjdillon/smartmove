@@ -148,7 +148,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     # color dot animal legend
     for i, a in enumerate(animals):
         prox_handles.append(mpatches.Patch(color=colors[i]))
-        prox_labels.append(a)
+        prox_labels.append('Seal No. {}'.format(a))
 
     # Fit to points legend
     prox_handles.append((plt.plot([], [], color='grey', linestyle='dashed'))[0])
