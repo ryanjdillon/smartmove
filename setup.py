@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -16,11 +16,10 @@ setup(
     url='https://github.com/ryanjdillon/smartmove',
     download_url='https://github.com/ryanjdillon/smartmove/archive/0.1.tar.gz',
     license='MIT',
-    packages=['smartmove'],
+    packages=find_packages(),
     install_requires=[
         'scipy==0.19.1',
         'seaborn==0.8',
-        '#sklearn==0.0',
         'scikit-learn==0.18.2',
         'theanets==0.7.3',
         'theano==0.9.0',
@@ -30,7 +29,7 @@ setup(
         'matplotlib==2.0.2',
         'yamlord==0.4',
         'pylleo==0.3',
-        'pyotelem==0.1',],
+        'pyotelem==0.2',],
     include_package_data=True,
     keywords=['datalogger','accelerometer','biotelemetry'],
     classifiers=[
