@@ -45,7 +45,7 @@ percent ranges.'''
 
 
     # table_exps 4
-    title = 'Field experiments - dive and glide event summary with the added effect of body density blocks.'
+    title = 'Field experiments - dive and glide event summary with the added effect of body density modification blocks.'
     caption = r'''Glides were identified during descent and ascent dive phases and split into sub-glides (SGL). Body densities were derived from the isotope analyses presented in Table~\ref{table_isotope}, and total modified body densities ($\rho\textsubscript{mod}$) were calculated from those with the additional effect of the attached blocks.'''
     attrs = add_attrs(attrs, 'table_exps', title, caption)
 
