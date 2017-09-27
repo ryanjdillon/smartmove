@@ -18,7 +18,7 @@ Installation
 
 Documentation
 --------------
-The full documentation can be found `here <http://smartmove.readthedocs.io/en/latest/index.html>`_ at Read the Docs. 
+The full documentation can be found `here <http://smartmove.readthedocs.io/en/latest/index.html>`_ at Read the Docs.
 
 Quickstart
 ----------
@@ -27,25 +27,25 @@ Quickstart
 
     import smartmove
     smartmove.create_project('./')
-    
+
     # Now copy Little Leo data to `data_tag`, csv data to `data_csv`, and CTD data to `data_ctd`
     # Then...
-    
+
     # Setup your analysis helper
     a = smartmove.Analysis('./')
-    
+
     # Run the glide identification
     a.run_glides()
-    
+
     # Run the ANN training
     a.run_ann()
-    
+
     # Make the figures and tables for the paper
     a.make_tables()
     a.make_figures()
 
 
-Contributers
+Contributors
 ------------
 
   * **Ryan J. Dillon** - All neural network code (using the theanets_ python
@@ -53,7 +53,7 @@ Contributers
 
   * **Lucia Martina Martin Lopez** - Original glide identification code written
     in Matlab
-    
+
   * **Kagari Aoki** - Calculations of modified seal body density
 
   * **Ippei Suzuki** - Propeller speed calibration calculations
