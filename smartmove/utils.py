@@ -277,8 +277,6 @@ def get_subdir(path, cfg):
             return params['name'].iloc[idx]
 
 
-    # TODO this requires that each exp have same paramter values as in
-    # cfg dict (i.e. cfg_ann and cfg_mcmc yaml)
     subdir_glide = match_subdir(path, cfg['glides'])
 
     path = os.path.join(path, subdir_glide)
@@ -293,15 +291,16 @@ def get_subdir(path, cfg):
 def filter_sgls(n_samples, exp_ind, sgls, max_pitch, min_depth,
         max_depth_delta, min_speed, max_speed, max_speed_delta):
     '''Create mask filtering only glides matching criterea
-    
+
     Args
     ----
     n_samples: int
         Total number of samples in tag data
     exp_ind: ndarray
         Boolean array to slice tag data to only experimental period
-    sgls: 
-        
+    sgls: pandas.DataFrame
+        A dataframe of subglide indices and summary information obtained
+        in `glideid`
     max_pitch: float
         Maximum allowable pitch during sub-glide
     min_depth: float
