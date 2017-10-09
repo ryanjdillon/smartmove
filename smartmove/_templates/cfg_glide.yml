@@ -1,7 +1,3 @@
-# TODO not currently used, useful with magnetometer data
-## Acceleromter/Magnotometer axis to analyze
-#axis: 0
-
 # Number of samples per frequency segment in PSD calculation
 nperseg: 256
 
