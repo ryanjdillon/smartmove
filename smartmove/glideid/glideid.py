@@ -373,10 +373,6 @@ def _process_tag_data(path_project, cfg_project, cfg_glide, path_exp, tag,
         cfg['cutoff_frq']   = cutoff_frq
         cfg['stroke_frq']   = stroke_frq
         cfg['stroke_ratio'] = stroke_ratio
-
-        # TODO seting to hardcode t-max, not calculate from stroke_frq
-        ## Calculate maximum duration of glides from stroke frequency
-        #cfg['t_max']  = 1 /cfg['stroke_frq']  # seconds
     else:
         cutoff_frq = 0.3
         cfg['cutoff_frq'] = cutoff_frq
