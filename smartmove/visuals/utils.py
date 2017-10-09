@@ -73,9 +73,6 @@ def compile_exp_data(path_project, field, cfg_ann):
     from ..ann import pre
     from ..config import paths, fnames
 
-    # TODO all of this info could be put into cfg_filter.yaml, then just walk
-    # through directories based on cfg_ann.yaml in model path
-
     def get_sgl_path(path_project, path_glide, path_exp, cfg):
         '''Concatenate path to subglide output directory'''
         from .. import utils
@@ -95,7 +92,6 @@ def compile_exp_data(path_project, field, cfg_ann):
     for c in cols:
         data[c] = numpy.array([None,]*len(exp_ids))
 
-    # TODO rewrite this to just use `field` columns
     for i in range(len(exp_ids)):
         path = _join(path_project, paths['tag'], exp_ids[i])
 
