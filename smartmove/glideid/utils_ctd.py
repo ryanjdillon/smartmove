@@ -188,44 +188,6 @@ def calc_mean_salinity(transects, transect_key, station_idx, max_depth):
     return mean_sal
 
 
-def plot_transect_data(transects):
-    '''Plot CTD transects from transects dictionary
-
-    Args
-    ----
-    transects: OrderedDict
-        Dictionary of transects, each with corresponding CTD data
-    '''
-    import matplotlib.pyplot as plt
-
-    from rjdtools.plot import maps
-
-    # Read lon/lat data from transects dict
-    data = get_station_lonlats(transects)
-
-    # import transect data
-    fig, ax = plt.subplots()
-
-    scale = 2.0
-    #map_props = maps.center_basemap(data['lon'], data['lat'], scale,
-    #                                             return_dict=True)
-    map_props = {'lon0': 18.55, 'lat0': 69.75, 'mapW':15000, 'mapH':15000}
-    map_colors = maps.get_mapcolors()
-    m = maps.draw_basemap(ax, map_props, map_colors, res='f')
-
-    for label, c in zip(['KF2', 'KF4', 'KF5'], ['red','blue','green']):
-        lons = data[data['id']==label]['lon'].values
-        lats = data[data['id']==label]['lat'].values
-        x, y = m(lons, lats)
-        ax.scatter(x, y, color='black')
-        ax.plot(x, y, color=c, label=label)
-
-    ax.legend()
-    plt.show()
-
-    return None
-
-
 def get_seawater_densities(file_ctd_mat, t, lon, lat, max_depth):
     import gsw
     import numpy
@@ -242,37 +204,3 @@ def get_seawater_densities(file_ctd_mat, t, lon, lat, max_depth):
     p = numpy.zeros(len(t))
 
     return gsw.rho(SA, t, p)
-
-
-def run_ctd(path_project):
-    import os
-    import yamlord
-
-    from ..config import paths, fnames
-
-    # Study location and max depth
-    file_cfg_project = os.path.join(path_project, fnames['cfg']['project'])
-    cfg_project = yamlord.read_yaml(file_cfg_project)
-
-    # Project coords 69° 41′ 57.9″ North, 18° 39′ 4.5″ East
-    lat = cfg_project['experiment']['coords']['lat']
-    lon = cfg_project['experiment']['coords']['lon']
-    net_depth = cfg_project['experiment']['net_depth']
-
-    ## Read data
-    file_ctd_mat = os.path.join(path_project, paths['ctd'],
-                                cfg_project['experiment']['fname_ctd'])
-
-    transects = read_matlab(file_ctd_mat)
-
-    # Find nearest station
-    transect_key, station_idx, min_dist = find_nearest_station(lon, lat, transects)
-    print('Longitude', transects[transect_key]['lon'][station_idx][0])
-    print('Latitude', transects[transect_key]['lat'][station_idx][0])
-
-    # Cacluate mean salinity above 18m
-    mean_sal = calc_mean_salinity(transects, transect_key, station_idx, net_depth)
-
-    plot_transect_data(transects)
-
-    return None
