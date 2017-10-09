@@ -134,12 +134,8 @@ def compile_exp_data(path_project, field, cfg_ann):
 
             sgls = sgls[~numpy.isnan(sgls['dive_id'].astype(float))]
 
-            # TODO hackfix, correcting for incorrectly assigned phases in
-            # calc_glide_des_asc(), swap back
             n_sgls_des = len(sgls[sgls['dive_phase'] == 'ascent'])
             n_sgls_asc = len(sgls[sgls['dive_phase'] == 'descent'])
-            #n_sgls_des = len(sgls[sgls['dive_phase'] == 'descent'])
-            #n_sgls_asc = len(sgls[sgls['dive_phase'] == 'ascent'])
 
             # Save number of SGLs with phase
             data['n_sgls_des'][i] = float(n_sgls_des)
