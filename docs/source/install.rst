@@ -3,10 +3,7 @@ Installation
 
 Download Smartmove
 ------------------
-First you will want to install `Python` version 3.5+. There are loads of
-tutorials on doing this, and the commands provided for installation and running
-the code *should* prevent any issues from occuring if you have multiple versions
-of `Python` installed.
+First install `Python` version 3.5+.
 
 You can get the `smartmove` code by either using `git clone` (shown below), or
 by downloading an archive file and extracting it to the location of your
