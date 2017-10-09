@@ -88,6 +88,7 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
     cb_labels = cb.ax.get_yticklabels()
     cb_labels = numpy.linspace(0, cm_max, len(cb_labels)).astype(int)
     cb.ax.set_yticklabels(cb_labels)
+    cb.outline.set_visible(False)
 
     # Configure matrix ticks
     tick_marks = numpy.arange(len(tick_labels))
