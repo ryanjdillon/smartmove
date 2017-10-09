@@ -1,5 +1,9 @@
 smartmove
 =========
+.. |DOI| image:: https://zenodo.org/badge/104394246.svg
+   :target: https://zenodo.org/badge/latestdoi/104394246
+|DOI|
+
 An application for creating an Artificial Neural Network to classify body
 density of marine mammals from datalogger data (primarily acceleration, depth,
 and speed sensor data with the help of some salinity data from CTD
