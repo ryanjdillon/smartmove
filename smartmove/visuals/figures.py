@@ -455,7 +455,8 @@ def plot_sgl_histos(path_project, cfg_ann, path_plot):
     return None
 
 
-def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
+def plot_sgl_highlight(path_project, cfg_ann, path_plot, idx_start=282400,
+        idx_end=284200, clip_x=True):
     '''Plot highlighted sub-glides
 
     Args
@@ -505,15 +506,14 @@ def plot_sgl_highlight(path_project, cfg_ann, path_plot, clip_x=True):
     sgls = read_pickle(_join(p, fnames['glide']['sgls']))
     mask_sgls_filt = read_pickle(_join(p, fnames['glide']['mask_sgls_filt']))
 
-    # TODO hardcoded, would be insanely tricky to autofind a good example of
-    # subglides, manually found and pass correct data indices for location
     mask_exp = mask_tag['exp']
     depths = tag['depth'].values
     cutoff_str = str(cfg_ann['data']['glides']['cutoff_frq'])
     Az_g_hf = tag['Az_g_hf_'+cutoff_str]
     plotglides.plot_sgls(mask_exp, depths, mask_tag_filt, sgls, mask_sgls_filt,
-                         Az_g_hf, idx_start=259000, idx_end=260800,
-                         path_plot=path_plot, clip_x=clip_x)
+                         Az_g_hf, idx_start=idx_start, idx_end=idx_end,
+                         path_plot=path_plot, leg_bbox=(1.23, 0.25),
+                         clip_x=clip_x)
     return None
 
 
@@ -556,8 +556,9 @@ def studyarea(path_plot):
     rcParams.update({'figure.autolayout': True})
     seaborn.set_context('paper')
     sns_config = {'axes.linewidth':0.1,
-                  'xtick.color':'black', 'xtick.major.size':4.0, 'xtick.direction':'out',
-                  'ytick.color':'black', 'ytick.major.size':4.0, 'ytick.direction':'out'}
+                  'xtick.color':'black', 'xtick.major.size':4.0,
+                  'xtick.direction':'out', 'ytick.color':'black',
+                  'ytick.major.size':4.0, 'ytick.direction':'out'}
     seaborn.set_style('white', sns_config)
 
     # Bounding box
@@ -671,8 +672,11 @@ def plot_ann_performance(cfg_ann, results_tune, path_plot):
 
     import pandas
 
+    seaborn.set_style('whitegrid', {'axes.linewidth':0.1, 'xtick.color':'black',
+                            'xtick.major.size':3.0,'xtick.direction':'out',
+                            'ytick.major.size':3.0,'ytick.direction':'out'})
     colors = seaborn.color_palette()
-    seaborn.set_context('notebook')
+    #seaborn.set_context('notebook')
 
     # Convert results_tune configs + acc to pandas dataframe
     params = ['hidden_nodes','hidden_layers']
@@ -686,7 +690,7 @@ def plot_ann_performance(cfg_ann, results_tune, path_plot):
 
     df_cfgs = df_cfgs.apply(pandas.to_numeric, errors='ignore')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(10,5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True, figsize=(6,3))
 
     sub_width = list()
     for ax, p in zip((ax1, ax2), params):
@@ -712,7 +716,7 @@ def plot_ann_performance(cfg_ann, results_tune, path_plot):
     return None
 
 
-def make_all(path_project, path_analysis):
+def make_all(path_project, path_analysis, studymap=True):
     '''Load data and generate all plots
 
     Args
@@ -778,8 +782,9 @@ def make_all(path_project, path_analysis):
     m = utils.last_monitors(results_dataset)
     plot_learning_curves(m, path_plot)
 
-    # Plot study area plot
-    studyarea(path_plot)
+    if studymap:
+        # Plot study area plot
+        studyarea(path_plot)
 
     # Plot hyperparameter accuracy performance
     file_results_tune = _join(path_output, fnames['ann']['tune'])
