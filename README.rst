@@ -1,6 +1,6 @@
 smartmove
 =========
-An application for creating an Artifical Neural Network to classify body
+An application for creating an Artificial Neural Network to classify body
 density of marine mammals from datalogger data (primarily acceleration, depth,
 and speed sensor data with the help of some salinity data from CTD
 measurements).
@@ -62,11 +62,21 @@ Contributors
     the respective posts where it was found should be linked to in the document
     string of the routines in which it was used.
 
-Thanks
--------
-The `theanets`_ package was used for implementing the aritifical neural network
+Acknowledgements
+----------------
+The research leading to these results was partially financed by  ARCEx funded
+by the Research Council of Norway (Project No. 228107) and as a component of
+the COEXIST (Condition and energy expenditure estimates from free-ranging
+marine mammals project), which was financed by the Research Council of Norway
+(Project No. 234411/E40).
+
+The `theanets`_ package was used for implementing the artificial neural network
 and is great work. Thanks `Leif Johnson`__!
 
 .. _theanets: https://github.com/lmjohns3/theanets
 .. _leif: https://github.com/lmjohns3
 __ leif_
+
+Thank you to Mark Johnson and René Swift at Sea Mammal Research Unit (St.
+Andrews, Scotland)the for your help and advice along the way on the processing
+of tag data.
