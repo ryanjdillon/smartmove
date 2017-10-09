@@ -146,7 +146,6 @@ def add_rhomod(file_field, file_isotope):
     isotope = pandas.read_csv(file_isotope, comment='#')
 
     # Get percent body compositions, including density - what we want
-    # TODO pass perc_water too?
     dens_gcm3 = pyotelem.physio_seal.lip2dens(isotope['fat_perc'])
     isotope['density_kgm3'] = dens_gcm3 * 1000
 
