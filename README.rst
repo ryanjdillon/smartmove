@@ -58,9 +58,9 @@ Contributors
 
   * **Ippei Suzuki** - Propeller speed calibration calculations
 
-  * Code taken or adapted from `Stackoverflow <https://stackoverflow.com/>`_ is in the public domain, and
-    the respective posts where it was found should be linked to in the document
-    string of the routines in which it was used.
+  * Code adapted from `Stackoverflow <https://stackoverflow.com/>`_ is in the
+    public domain, and the respective posts where it was found should be linked
+    to in the document string of the routines in which it was used.
 
 Acknowledgements
 ----------------
