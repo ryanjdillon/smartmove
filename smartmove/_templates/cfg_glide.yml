@@ -28,6 +28,5 @@ J: 0.0349
 # For magnetic pry routine
 alpha: 25
 
-# TODO redundant for filt_params?
 # Minimum depth at which to recognize a dive (2. Define dives)
 min_depth: 0.4
