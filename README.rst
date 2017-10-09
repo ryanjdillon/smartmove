@@ -64,11 +64,11 @@ Contributors
 
 Acknowledgements
 ----------------
-The research leading to these results was partially financed by  ARCEx funded
-by the Research Council of Norway (Project No. 228107) and as a component of
-the COEXIST (Condition and energy expenditure estimates from free-ranging
-marine mammals project), which was financed by the Research Council of Norway
-(Project No. 234411/E40).
+This development of this code was partially financed by  ARCEx funded by the
+Research Council of Norway (Project No. 228107) and as a component of the
+COEXIST (Condition and energy expenditure estimates from free-ranging marine
+mammals project), which was financed by the Research Council of Norway (Project
+No. 234411/E40).
 
 The `theanets`_ package was used for implementing the artificial neural network
 and is great work. Thanks `Leif Johnson`__!
