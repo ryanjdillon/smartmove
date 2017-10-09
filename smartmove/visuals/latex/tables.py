@@ -139,8 +139,6 @@ def __create_body(data, cols):
     import datetime
     import numpy
 
-    # TODO It is sometimes the case all dtypes or `object`, need to handle this
-
     # Process each row of body data
     val_str = ''
     keys = list(cols.keys())
