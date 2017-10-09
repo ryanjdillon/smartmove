@@ -131,7 +131,7 @@ def compile_exp_data(path_project, field, cfg_ann):
 
             sgls = pandas.read_pickle(_join(glide_data_path,
                                             fnames['glide']['sgls']))
-            # TODO perhaps dive ids being set to NaN incorrectly in glidepy
+
             sgls = sgls[~numpy.isnan(sgls['dive_id'].astype(float))]
 
             # TODO hackfix, correcting for incorrectly assigned phases in
