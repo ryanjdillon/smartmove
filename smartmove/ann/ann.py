@@ -519,6 +519,9 @@ def run(path_project, path_analysis, cfg_project, cfg_ann, sgls_all,
         Dictionary of configuration parameters for the current project
     cfg_ann: OrderedDict
         Dictionary of configuration parameters for the ANN
+    sgls_all: pandas.DataFrame
+        A dataframe of all subglide data compiled from the glide identification
+        performed by `glideid`.
     debug: bool
         Swith for running single network configuration
     plots: bool
