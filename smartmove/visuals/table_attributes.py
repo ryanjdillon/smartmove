@@ -32,7 +32,7 @@ def get_all():
     # table_ann_target_descr 2
     title = r'''ANN target value bins with $\rho\textsubscript{mod}$ and lipid
 percent ranges.'''
-    caption = r''' Calculated $\rho\textsubscript{mod}$ values are assigned to a bin such that $bin\textsubscript{min} >= \rho\textsubscript{mod} > bin\textsubscript{max}$. Lipid percent ranges were calculated from the corresponding $\rho\textsubscript{mod}$ ranges using the equations presented in \cite{biuw_blubber_2003}. Bins prepended with an asterisk were those within which the ANN made classifications (see Table~\ref{table_ann_feature_stats}).'''
+    caption = r''' Calculated $\rho\textsubscript{mod}$ values are assigned to a bin such that $bin\textsubscript{min} >= \rho\textsubscript{mod} > bin\textsubscript{max}$. Lipid percent ranges were calculated from the corresponding $\rho\textsubscript{mod}$ ranges using the equations presented in Biuw \textit{et al}. \cite{biuw_blubber_2003}. Bins with bold integer IDs were those within which the ANN made classifications (see Table~\ref{table_ann_feature_stats}).'''
     attrs = add_attrs(attrs, 'table_ann_target_descr', title, caption,
             adjustwidth=False)
 
