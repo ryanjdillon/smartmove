@@ -41,14 +41,17 @@ def table_exps(name, attrs, path_table, data):
     cols['sgls_des_str'] = '%str'
     cols['sgls_asc_str'] = '%str'
     cols['density_kgm3'] = '%.1f'
-    cols['rho_mod']   = '%.1f'
+    cols['rho_mod']      = '%.1f'
+    cols['rho_sw']       = '%.1f'
 
     # Column names to print in table
-    names = ['ID', 'Date', 'Animal', 'Mod.', 'Duration', 'Dives',
-             'Descent SGLs', 'Ascent SGLs', r'$\rho\textsubscript{seal}$',
-             r'$\rho\textsubscript{mod}$']
+    names = ['ID', 'Date', 'Seal', 'Mod.', 'Duration', 'Dives',
+             '↓ SGLs', '↑ SGLs', r'$\rho\textsubscript{seal}$',
+             r'$\rho\textsubscript{mod}$',
+             r'$\overline{\rho\textsubscript{sw}\raisebox{2mm}{}}$']
 
     units = ['', '', '', '', '', 'No.', 'No. (\%)', 'No. (\%)',
+             r'$kg \cdot m\textsuperscript{-3}$',
              r'$kg \cdot m\textsuperscript{-3}$',
              r'$kg \cdot m\textsuperscript{-3}$']
     headers = [names, units]
