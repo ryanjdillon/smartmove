@@ -65,9 +65,6 @@ def write_table(out_root, fname, data, cols, headers, adjustwidth=False,
     f.write(table)
     f.close()
 
-    # Generate pdf image of table in output directory
-    utils.compile_latex(out_root, fname, dpi=dpi)
-
     return table
 
 
