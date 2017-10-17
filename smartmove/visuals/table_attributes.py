@@ -40,7 +40,7 @@ percent ranges.'''
     # table_ann_params 3
     title = r'''\textit{Theanets} training function \textit{itertrain} input
     parameters that modified the ANN network configuration.'''
-    caption = r''' These parameters were used to configure the architecture and loss function of the algorithm. During the network tuning an ANN was trained and tested for all combinations of possible values for each parameter. Bold faced values produced the network yielding the highest accuracy. See \nameref{S1_theanets} for input parameter descriptions.'''
+    caption = r''' These parameters were used to configure the architecture and loss function of the algorithm. During the network tuning an ANN was trained and tested for all combinations of possible values for each parameter. Bold faced values produced the network yielding the highest accuracy. See \nameref{S1\_theanets} for input parameter descriptions.'''
     attrs = add_attrs(attrs, 'table_ann_params', title, caption,
             adjustwidth=False)
 
