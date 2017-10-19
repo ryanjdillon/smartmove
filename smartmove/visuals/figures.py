@@ -5,7 +5,7 @@ paper, as well as a function to load the necessary data and call them all
 from os.path import join as _join
 _linewidth = 0.5
 
-def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
+def plot_sgls_tmbd(exps_all, path_plot=None, dpi=600):
     '''Plot percentage of sgls during descent and ascent against rho_mod
 
     Args
@@ -208,7 +208,7 @@ def plot_sgls_tmbd(exps_all, path_plot=None, dpi=300):
     if path_plot is not None:
         file_path = _join(path_plot, '{}.{}'.format(fname, ext))
         [ax.set_aspect('equal') for ax in [ax1, ax2]]
-        plt.savefig(file_path, format=ext, bbox_inches='tight')
+        plt.savefig(file_path, format=ext, bbox_inches='tight', dpi=600)
 
         latex.utils.pdf_to_img(path_plot, fname, in_ext='eps', out_ext='png',
                                dpi=dpi)
@@ -269,7 +269,7 @@ def plot_learning_curves(m, path_plot=None):
     ext = 'eps'
     if path_plot is not None:
         file_path = _join(path_plot, '{}.{}'.format(fname, ext))
-        plt.savefig(file_path, format=ext, bbox_inches='tight')
+        plt.savefig(file_path, format=ext, bbox_inches='tight', dpi=600)
 
     plt.show()
 
@@ -339,7 +339,7 @@ def sgl_density(exp_name, sgls, max_depth=20, textstr='', path_plot=None):
         ext = 'eps'
         fname_plot_sgl = 'heatmap_{}.{}'.format(exp_name, ext)
         file_plot_sgl = _join(path_plot, fname_plot_sgl)
-        g.savefig(filename=file_plot_sgl)
+        g.savefig(filename=file_plot_sgl, dpi=600)
 
     plt.close('all')
 
@@ -448,7 +448,7 @@ def plot_sgl_histos(path_project, cfg_ann, path_plot):
     ext = 'eps'
     if path_plot is not None:
         file_path = _join(path_plot, '{}.{}'.format(fname, ext))
-        plt.savefig(file_path, format=ext, bbox_inches='tight')
+        plt.savefig(file_path, format=ext, bbox_inches='tight', dpi=600)
 
     plt.show()
 
@@ -709,7 +709,7 @@ def plot_ann_performance(cfg_ann, results_tune, path_plot):
         ext = 'eps'
         fname_plot_sgl = 'hyperparameter_accuracy.{}'.format(ext)
         file_plot_sgl = _join(path_plot, fname_plot_sgl)
-        plt.savefig(filename=file_plot_sgl)
+        plt.savefig(filename=file_plot_sgl, dpi=600)
 
     plt.show()
 

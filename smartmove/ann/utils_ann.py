@@ -112,7 +112,7 @@ def plot_confusion_matrix(cm, tick_labels, xlabel='Predicted',
             fname += '_normalized'
 
         file_path = os.path.join(path_plot, '{}.{}'.format(fname, ext))
-        plt.savefig(file_path, format=ext, bbox_inches='tight')
+        plt.savefig(file_path, format=ext, bbox_inches='tight', dpi=600)
 
     plt.tight_layout()
     plt.show()
