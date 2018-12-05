@@ -85,7 +85,8 @@ def compile_exp_data(path_project, field, cfg_ann):
 
     cols = [ 'id', 'date', 'animal', 'mod_str', 'duration', 'n_dives',
             'n_sgls_asc', 'n_sgls_des', 'sgls_asc_str', 'sgls_des_str',
-            'perc_des', 'perc_asc', 'tritium_id', 'density_kgm3', 'rho_mod']
+            'perc_des', 'perc_asc', 'tritium_id', 'density_kgm3', 'rho_mod',
+            'rho_sw']
 
     data = OrderedDict()
     exp_ids = field['exp_id'].values
@@ -164,6 +165,9 @@ def compile_exp_data(path_project, field, cfg_ann):
             # Total original and modified body density
             data['density_kgm3'][i] = field.ix[i, 'density_kgm3']
             data['rho_mod'][i] = field.ix[i, 'rho_mod']
+
+            # Average seawater density in experiment
+            data['rho_sw'][i] = tag['dsw'][masks['exp']].mean()
 
     data['id'] = numpy.array(list(range(len(data['date'])))) + 1
 
