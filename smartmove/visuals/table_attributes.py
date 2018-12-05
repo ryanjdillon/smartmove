@@ -47,7 +47,7 @@ percent ranges.'''
 
     # table_exps 5
     title = 'Field experiments - dive and glide event summary with the added effect of body density modification blocks.'
-    caption = r''' Glides were identified during descent and ascent dive phases and split into sub-glides (SGL). Body densities were derived from the isotope analyses presented in Table~\ref{table_isotope}, and total modified body densities ($\rho\textsubscript{mod}$) were calculated from those with the additional effect of the attached blocks.'''
+    caption = r''' Glides were identified during descent (↓) and ascent (↑) dive phases and split into sub-glides (SGL). Body densities were derived from the isotope analyses presented in Table~\ref{table_isotope}, and total modified body densities ($\rho\textsubscript{mod}$) were calculated from those with the additional effect of the attached blocks. The mean seawater density during the experiment ($\overline{\rho\textsubscript{sw}\raisebox{2mm}{}}$) is shown in the last column.'''
     attrs = add_attrs(attrs, 'table_exps', title, caption)
 
 
