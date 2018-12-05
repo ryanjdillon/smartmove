@@ -117,7 +117,7 @@ def table_isotope(name, attrs, path_table, data):
     cols['density_kgm3'] = '%.1f'
 
     names, units = utils.parse_col_txt(data.columns)
-    names = ['Field experiments', 'Date', 'Animal', 'Mass', 'Water', 'Water',
+    names = ['Field experiments', 'Date', 'Seal', 'Mass', 'Water', 'Water',
              'Fat', 'Fat', 'Protein', 'Protein', r'$\rho\textsubscript{seal}$']
     units = ['', '', '', '$kg$', '$L$', '$\%$', '$kg$', '$\%$',
             '$kg$', '$\%$', r'$kg \cdot m\textsuperscript{-3}$']
