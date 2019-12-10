@@ -1,0 +1,17 @@
+# Pitch angle (degrees) to consider sgls
+pitch_thresh: 30
+
+# Minimum depth at which to recognize a dive (2. Define dives)
+min_depth: 0.4
+
+# Maximum cummulative change in depth over a glide
+max_depth_delta: 8.0
+
+# Minimum mean speed of sublide
+min_speed: 0.3
+
+# Maximum mean speed of sublide
+max_speed: 10
+
+# Maximum cummulative change in speed over a glide
+max_speed_delta: 1.0
