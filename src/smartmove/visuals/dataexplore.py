@@ -1,9 +1,20 @@
-'''
+"""
 This modules contains plotting rouines for exploring the tag dataframes
-'''
+"""
+import numpy
+import os
+import pandas
+import matplotlib
+import matplotlib.pyplot as plt
+
+from smartmove.config import paths
+
+
+matplotlib.use("Agg")
+
 
 def compare_tags(path_project, cfg_experiments, param, show_single=False):
-    '''Compare data accross data files in acclerometer data folder
+    """Compare data accross data files in acclerometer data folder
 
     Args
     ----
@@ -16,47 +27,36 @@ def compare_tags(path_project, cfg_experiments, param, show_single=False):
         Then name of the column in the tag dataframe to plot
     show_single: bool
         Switch to show a single plot for each tag dataframe (Default: False)
-    '''
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-    import numpy
-    import os
-    import pandas
-    #import seaborn
-    import yamlord
+    """
 
-    from ..config import paths, fnames
-    from . import utils
+    cmap = matplotlib.cm.get_cmap("tab20b")
 
-    cmap = matplotlib.cm.get_cmap('tab20b')
-
-    path_tags = os.path.join(path_project, paths['tag'])
+    path_tags = os.path.join(path_project, paths["tag"])
 
     c = 0
     # Ugly color palette for us color-blind people, could be improved
     dir_list = sorted(os.listdir(path_tags))
 
-    norm = matplotlib.colors.Normalize(vmin=0, vmax=(len(dir_list)-1))
+    norm = matplotlib.colors.Normalize(vmin=0, vmax=(len(dir_list) - 1))
     colors = [cmap(norm(i)) for i in range(len(dir_list))]
 
     min_val = 9e13
     max_val = 0
-    min_exp = ''
-    max_exp = ''
+    min_exp = ""
+    max_exp = ""
     idx_val = 9e13
-    idx_exp = ''
+    idx_exp = ""
     for d in dir_list:
         path_tag = os.path.join(path_tags, d)
         if os.path.isdir(path_tag):
             for fname in os.listdir(path_tag):
-                if fname.startswith('pydata'):
+                if fname.startswith("pydata"):
                     print(c, fname)
                     fname = os.path.join(path_tag, fname)
                     data = pandas.read_pickle(fname)
 
-                    start_idx = cfg_experiments[d]['start_idx']
-                    stop_idx = cfg_experiments[d]['stop_idx']
+                    start_idx = cfg_experiments[d]["start_idx"]
+                    stop_idx = cfg_experiments[d]["stop_idx"]
 
                     mask_tag = numpy.zeros(len(data), dtype=bool)
                     mask_tag[start_idx:stop_idx] = 1
@@ -79,9 +79,9 @@ def compare_tags(path_project, cfg_experiments, param, show_single=False):
                         plt.show()
             c += 1
 
-    print('Min {}: {} {}'.format(param, min_exp, min_val))
-    print('Max {}: {} {}'.format(param, max_exp, max_val))
-    print('Min index: {} {}'.format(idx_exp, idx_val))
+    print("Min {}: {} {}".format(param, min_exp, min_val))
+    print("Max {}: {} {}".format(param, max_exp, max_val))
+    print("Min index: {} {}".format(idx_exp, idx_val))
 
     if not show_single:
         plt.legend()

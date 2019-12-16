@@ -1,4 +1,4 @@
-'''
+"""
 This module contains functions for retrieving Kartverket map data for specified areas.
 
 Notes
@@ -16,10 +16,11 @@ Karverket WMS example:
 
     http://openwms.statkart.no/skwms1/wms.topo3?version=1.1.1&styles=&service=wms&REQUEST=map&SRS=EPSG:32633&BBOX=210924.955,6668620.35,255289.776,6688292.32&LAYERS=topo3_WMS&WIDTH=1650&HEIGHT=1100&FORMAT=image/png&BGCOLOR=0xFFFFFF&TRANSPARENT=TRUE
 
-'''
+"""
+
 
 def get_wms_dict(xml):
-    '''An almost useful routine from creating a dict from a capabilities XML
+    """An almost useful routine from creating a dict from a capabilities XML
 
     Args
     ----
@@ -30,35 +31,35 @@ def get_wms_dict(xml):
     -------
     d: OrderedDict
         Capabilities XML key/values in dict format
-    '''
+    """
     from collections import OrderedDict
     from bs4 import BeautifulSoup
 
     def get_attrs(layer, key):
         return layer.find(key).attrs
 
-    soup = BeautifulSoup(xml, 'lxml')
+    soup = BeautifulSoup(xml, "lxml")
 
-    layers = soup.findAll('layer')[1:]
+    layers = soup.findAll("layer")[1:]
 
     d = OrderedDict()
     for l in layers:
-        title = l.find('title').text
+        title = l.find("title").text
         d[title] = OrderedDict()
 
-        boundingboxes = l.findAll('boundingbox')
-        for srs in sorted([srs.text for srs in l.findAll('srs')]):
+        boundingboxes = l.findAll("boundingbox")
+        for srs in sorted([srs.text for srs in l.findAll("srs")]):
             for bb in boundingboxes:
-                if bb['srs'] == srs:
+                if bb["srs"] == srs:
                     d[title][srs] = OrderedDict()
                     for k in sorted(bb.attrs.keys()):
-                        if k != 'srs':
+                        if k != "srs":
                             d[title][srs][k] = bb.attrs[k]
     return d
 
 
 def project_bbox(srs, lon0, lat0, lon1, lat1):
-    '''Project the bounding box for map extent coords from WGS84 to `srs`
+    """Project the bounding box for map extent coords from WGS84 to `srs`
 
     Args
     ----
@@ -78,12 +79,12 @@ def project_bbox(srs, lon0, lat0, lon1, lat1):
     bbox: float tuple
         Bounding box for map extent. Value is `minx, miny, maxx, maxy` in units
         of the SRS
-    '''
+    """
 
     import pyproj
 
-    wgs84 = pyproj.Proj(init='EPSG:4326')
-    proj = pyproj.Proj('+init={}'.format(srs))
+    wgs84 = pyproj.Proj(init="EPSG:4326")
+    proj = pyproj.Proj("+init={}".format(srs))
 
     minx, miny = pyproj.transform(wgs84, proj, lon0, lat0)
     maxx, maxy = pyproj.transform(wgs84, proj, lon1, lat1)
@@ -92,7 +93,7 @@ def project_bbox(srs, lon0, lat0, lon1, lat1):
 
 
 def get_size(bbox, width):
-    '''Generate adjusted width and height from bounds and given width
+    """Generate adjusted width and height from bounds and given width
 
     Args
     ----
@@ -108,7 +109,7 @@ def get_size(bbox, width):
         Adjusted pixel width for Karverket WMS GetMap() query
     height: int
         Adjusted pixel height for Karverket WMS GetMap() query
-    '''
+    """
     import pyproj
 
     # Maximum WIDTH/HEIGHT dimension for Kartveket WMS GetMap call
@@ -134,7 +135,7 @@ def get_size(bbox, width):
 
 
 def get_wms_png(wms, bbox, layer, srs, width=1600, transparent=True):
-    '''Get map data via WMS GetMap method for given bounding box, and width
+    """Get map data via WMS GetMap method for given bounding box, and width
 
     Args
     ----
@@ -156,22 +157,28 @@ def get_wms_png(wms, bbox, layer, srs, width=1600, transparent=True):
     -------
     oswslib_img: owslib.image
         Image object with retrieved image data
-    '''
+    """
 
-    img_fmt = 'image/png'
+    img_fmt = "image/png"
 
     # Generate size parameters from `bbox` and desired pixel width
     size = get_size(bbox, width)
 
     # Retrieve map data using WMS GetMap() call
-    owslib_img = wms.getmap(layers=[layer], srs=srs, bbox=bbox, size=size,
-                            format=img_fmt, transparent=transparent)
+    owslib_img = wms.getmap(
+        layers=[layer],
+        srs=srs,
+        bbox=bbox,
+        size=size,
+        format=img_fmt,
+        transparent=transparent,
+    )
 
     return owslib_img
 
 
 def png2geotiff(filename_png, srs, bbox):
-    '''Read and convert png file to GEOTIFF file with GDAL
+    """Read and convert png file to GEOTIFF file with GDAL
 
     Args
     ----
@@ -182,20 +189,20 @@ def png2geotiff(filename_png, srs, bbox):
     bbox: float tuple
         Bounding box for map extent. Value is `minx, miny, maxx, maxy` in units
         of the SRS
-    '''
+    """
     import os
     import subprocess
 
-    filename_tif = '{}.tif'.format(os.path.splitext(filename_png)[0])
+    filename_tif = "{}.tif".format(os.path.splitext(filename_png)[0])
     params = (srs, bbox[0], bbox[1], bbox[2], bbox[3], filename_png, filename_tif)
-    call = 'gdal_translate -a_srs {} -a_ullr {} {} {} {} {} {}'.format(*params)
-    subprocess.check_call(call.split(' '))
+    call = "gdal_translate -a_srs {} -a_ullr {} {} {} {} {} {}".format(*params)
+    subprocess.check_call(call.split(" "))
 
     return None
 
 
 def map_ticks(pos0, pos1, n, nsew=False):
-    '''Generate n tick positions and labels from given start and end position
+    """Generate n tick positions and labels from given start and end position
 
     Args
     ----
@@ -214,32 +221,32 @@ def map_ticks(pos0, pos1, n, nsew=False):
         Projected tick positions
     labels: list of str
         Labels in DPS for generated tick positions
-    '''
+    """
     import numpy
 
     def parse_degminsec(dec_degs, method=None, round_secs=False):
-        '''Parse decimal degrees to degrees, minutes and seconds'''
+        """Parse decimal degrees to degrees, minutes and seconds"""
         degs = numpy.floor(dec_degs)
         dec_mins = numpy.abs((dec_degs - degs) * 60)
         mins = numpy.floor(dec_mins)
         secs = numpy.abs((dec_mins - mins) * 60)
 
-        if method == 'lon':
+        if method == "lon":
             if degs < 0:
-                nsew = 'W'
+                nsew = "W"
             elif degs > 0:
-                nsew = 'E'
+                nsew = "E"
             else:
-                nsew = ''
-        elif method == 'lat':
+                nsew = ""
+        elif method == "lat":
             if degs < 0:
-                nsew = 'S'
+                nsew = "S"
             elif degs > 0:
-                nsew = 'N'
+                nsew = "N"
             else:
-                nsew = ''
+                nsew = ""
         else:
-            nsew = ''
+            nsew = ""
 
         if round_secs:
             secs = numpy.round(secs)
@@ -247,13 +254,13 @@ def map_ticks(pos0, pos1, n, nsew=False):
         return degs, mins, secs, nsew
 
     ticks = numpy.linspace(pos0, pos1, n)
-    print('lon lat', pos0, pos1)
+    print("lon lat", pos0, pos1)
 
     fmt = "{:.0f}$\degree$ {:.0f}$'$ {:.0f}$''$"
 
     degs, mins, secs, nsews = parse_degminsec(ticks, round_secs=True)
     if nsew:
-        fmt += ' {}'
+        fmt += " {}"
         values = zip(degs, mins, secs, nsews)
         labels = [fmt.format(d, m, s, ns) for d, m, s in values]
     else:

@@ -1,9 +1,17 @@
-'''
+"""
 This module contains utility functions using in Smartmove
-'''
+"""
+import importlib
+from collections import OrderedDict
+import os
+import subprocess
+
+import numpy
+import pandas
+
 
 def mask_from_noncontiguous_indices(n, start_ind, stop_ind):
-    '''Create boolean mask from start stop indices of noncontiguous regions
+    """Create boolean mask from start stop indices of noncontiguous regions
 
     Args
     ----
@@ -18,19 +26,18 @@ def mask_from_noncontiguous_indices(n, start_ind, stop_ind):
     -------
     mask: numpy.ndarray, shape (n,), dtype boolean
         boolean mask array
-    '''
-    import numpy
+    """
 
     mask = numpy.zeros(n, dtype=bool)
 
     for i in range(len(start_ind)):
-        mask[start_ind[i]:stop_ind[i]] = True
+        mask[start_ind[i] : stop_ind[i]] = True
 
     return mask
 
 
 def get_n_lines(file_path):
-    '''Get number of lines by calling bash command wc
+    """Get number of lines by calling bash command wc
 
     Args
     ----
@@ -41,11 +48,9 @@ def get_n_lines(file_path):
     -------
     n_lines: int
         Number of lines in file
-    '''
-    import os
-    import subprocess
+    """
 
-    cmd = 'wc -l {0}'.format(file_path)
+    cmd = "wc -l {0}".format(file_path)
     output = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout
     n_lines = int((output).readlines()[0].split()[0])
 
@@ -53,7 +58,7 @@ def get_n_lines(file_path):
 
 
 def get_versions(module_name):
-    '''Return versions for repository and packages in requirements file
+    """Return versions for repository and packages in requirements file
 
     Args
     ----
@@ -64,25 +69,20 @@ def get_versions(module_name):
     -------
     versions: OrderedDict
         Dictionary of module name and dependencies with versions
-    '''
-    from collections import OrderedDict
-    import importlib
-    import os
-
+    """
     versions = OrderedDict()
 
     module = importlib.util.find_spec(module_name)
 
     # Get path to pylleo requirements file
-    module_path  = os.path.split(module.origin)[0]
-    requirements = os.path.join(module_path, 'requirements.txt')
+    module_path = os.path.split(module.origin)[0]
 
     # Add git hash for module to dict
     cwd = os.getcwd()
     os.chdir(module_path)
     try:
-        versions[module_name] = get_githash('long')
-    except:
+        versions[module_name] = get_githash("long")
+    except Exception:
         versions[module_name] = module.__version__
 
     os.chdir(cwd)
@@ -91,7 +91,7 @@ def get_versions(module_name):
 
 
 def get_githash(hash_type):
-    '''Add git commit for reference to code that produced data
+    """Add git commit for reference to code that produced data
 
     Args
     ----
@@ -103,18 +103,17 @@ def get_githash(hash_type):
     -------
     git_hash: str
         Git hash as a 6 or 40 char string depending on keywork `hash_type`
-    '''
-    import subprocess
+    """
 
     cmd = dict()
-    cmd['long']  = ['git', 'rev-parse', 'HEAD']
-    cmd['short'] = ['git', 'rev-parse', '--short', 'HEAD']
+    cmd["long"] = ["git", "rev-parse", "HEAD"]
+    cmd["short"] = ["git", "rev-parse", "--short", "HEAD"]
 
-    return subprocess.check_output(cmd[hash_type]).decode('ascii').strip()
+    return subprocess.check_output(cmd[hash_type]).decode("ascii").strip()
 
 
 def symlink(src, dest):
-    '''Failsafe creation of symlink if symlink already exists
+    """Failsafe creation of symlink if symlink already exists
 
     Args
     ----
@@ -122,13 +121,12 @@ def symlink(src, dest):
         Path or file to create symlink to
     dest: str
         Path of new symlink
-    '''
-    import os
+    """
 
     # Attempt to delete existing symlink
     try:
         os.remove(dest)
-    except:
+    except Exception:
         pass
 
     os.symlink(src, dest)
@@ -137,7 +135,7 @@ def symlink(src, dest):
 
 
 def cat_path(d, ignore):
-    '''Concatenate dictionary key, value pairs to a single string
+    """Concatenate dictionary key, value pairs to a single string
 
     Args
     ----
@@ -150,20 +148,20 @@ def cat_path(d, ignore):
     -------
     s: str
         String with concatenated key, value pairs
-    '''
+    """
 
     items = list(d.items())
-    s = ''
+    s = ""
     for i in range(len(items)):
         key, value = items[i]
         if key not in set(ignore):
-            s += '{}_{}__'.format(key, value)
+            s += "{}_{}__".format(key, value)
 
     return s[:-2]
 
 
 def _parse_subdir(path):
-    '''Parse parameters in names of child directories to pandas dataframe
+    """Parse parameters in names of child directories to pandas dataframe
 
     Child directories in `path` are parsed so that the parameter values in
     their directory names can be easily searched using a pandas.DataFrame.
@@ -181,40 +179,35 @@ def _parse_subdir(path):
         Dataframe with one row for each respective child directory and one
         column for each parameter.
 
-    '''
-    import os
-    import numpy
-    import pandas
-
+    """
     dir_list = numpy.asarray(os.listdir(path), dtype=object)
 
     # Search root directory for directories to parse
     for i in range(len(dir_list)):
-        if os.path.isdir(os.path.join(path,dir_list[i])):
+        if os.path.isdir(os.path.join(path, dir_list[i])):
             name = dir_list[i]
             # Split parameters in name
-            dir_list[i] = dir_list[i].split('__')
+            dir_list[i] = dir_list[i].split("__")
             for j in range(len(dir_list[i])):
-                param = dir_list[i][j].split('_')
+                param = dir_list[i][j].split("_")
                 # Join names with `_` back together, make key/value tuple
-                key = '_'.join(param[:-1])
+                key = "_".join(param[:-1])
                 value = param[-1]
-                if value == 'None':
+                if value == "None":
                     value = numpy.nan
                 param = (key, float(value))
                 dir_list[i][j] = param
             # Convert list of tuples to dictionary
             dir_list[i] = dict(dir_list[i])
             # Add directory name to dict for later retrieval
-            dir_list[i]['name'] = name
+            dir_list[i]["name"] = name
         else:
-            dir_list[i] = ''
+            dir_list[i] = ""
 
     # Remove entries that are files
-    dir_list = dir_list[~(dir_list == '')]
+    dir_list = dir_list[~(dir_list == "")]
 
     # Convert list of dictionaries to dictionary of lists
-    keys = dir_list[0].keys()
     params = dict()
     for i in range(len(dir_list)):
         for key in dir_list[i]:
@@ -226,7 +219,7 @@ def _parse_subdir(path):
 
 
 def get_subdir(path, cfg):
-    '''Get path to glide output data for a given `cfg_glide`
+    """Get path to glide output data for a given `cfg_glide`
 
     Args
     ----
@@ -239,13 +232,9 @@ def get_subdir(path, cfg):
     -------
     path_data: str
         Absolute path to glide data output path
-    '''
-    import os
-
-    import pyotelem
+    """
 
     def match_subdir(path, cfg):
-        import numpy
 
         n_subdirs = 0
         for d in os.listdir(path):
@@ -253,7 +242,7 @@ def get_subdir(path, cfg):
                 n_subdirs += 1
 
         if n_subdirs == 0:
-            raise SystemError('No data subdirectories in {}'.format(path))
+            raise SystemError("No data subdirectories in {}".format(path))
 
         params = _parse_subdir(path)
         mask = numpy.zeros(n_subdirs, dtype=bool)
@@ -271,26 +260,34 @@ def get_subdir(path, cfg):
 
         idx = numpy.where(mask)[0]
         if idx.size > 1:
-            raise SystemError('More than one matching directory found')
+            raise SystemError("More than one matching directory found")
         else:
             idx = idx[0]
-            return params['name'].iloc[idx]
+            return params["name"].iloc[idx]
 
-
-    subdir_glide = match_subdir(path, cfg['glides'])
+    subdir_glide = match_subdir(path, cfg["glides"])
 
     path = os.path.join(path, subdir_glide)
-    subdir_sgl   = match_subdir(path, cfg['sgls'])
+    subdir_sgl = match_subdir(path, cfg["sgls"])
 
     path = os.path.join(path, subdir_sgl)
-    subdir_filt  = match_subdir(path, cfg['filter'])
+    subdir_filt = match_subdir(path, cfg["filter"])
 
     return os.path.join(subdir_glide, subdir_sgl, subdir_filt)
 
 
-def filter_sgls(n_samples, exp_ind, sgls, max_pitch, min_depth,
-        max_depth_delta, min_speed, max_speed, max_speed_delta):
-    '''Create mask filtering only glides matching criterea
+def filter_sgls(
+    n_samples,
+    exp_ind,
+    sgls,
+    max_pitch,
+    min_depth,
+    max_depth_delta,
+    min_speed,
+    max_speed,
+    max_speed_delta,
+):
+    """Create mask filtering only glides matching criterea
 
     Args
     ----
@@ -320,49 +317,44 @@ def filter_sgls(n_samples, exp_ind, sgls, max_pitch, min_depth,
         Boolean mask to slice tag dataframe to filtered sub-glides
     mask_sgls: ndarray
         Boolean mask to slice sgls dataframe to filtered sub-glides
-    '''
-    import numpy
-
-    import pyotelem
+    """
 
     # Defined experiment indices
-    mask_exp = (sgls['start_idx'] >= exp_ind[0]) & \
-               (sgls['stop_idx'] <= exp_ind[-1])
+    mask_exp = (sgls["start_idx"] >= exp_ind[0]) & (sgls["stop_idx"] <= exp_ind[-1])
 
     # Found within a dive
-    mask_divid = ~numpy.isnan(sgls['dive_id'].astype(float))
+    mask_divid = ~numpy.isnan(sgls["dive_id"].astype(float))
 
     # Uniformity in phase (dive direction)
-    mask_phase = (sgls['dive_phase'] == 'descent') | \
-                 (sgls['dive_phase'] == 'ascent')
+    mask_phase = (sgls["dive_phase"] == "descent") | (sgls["dive_phase"] == "ascent")
 
     # Depth change and minimum depth constraints
-    mask_depth = (sgls['total_depth_change'] < max_depth_delta) & \
-                 (sgls['total_depth_change'] > min_depth)
+    mask_depth = (sgls["total_depth_change"] < max_depth_delta) & (
+        sgls["total_depth_change"] > min_depth
+    )
 
     # Pitch angle constraint
-    mask_deg = (sgls['mean_pitch'] <  max_pitch) & \
-               (sgls['mean_pitch'] > -max_pitch)
+    mask_deg = (sgls["mean_pitch"] < max_pitch) & (sgls["mean_pitch"] > -max_pitch)
 
     # Speed constraints
-    mask_speed = (sgls['mean_speed'] > min_speed) & \
-                 (sgls['mean_speed'] < max_speed) & \
-                 (sgls['total_speed_change'] < max_speed_delta)
+    mask_speed = (
+        (sgls["mean_speed"] > min_speed)
+        & (sgls["mean_speed"] < max_speed)
+        & (sgls["total_speed_change"] < max_speed_delta)
+    )
 
     # Concatenate masks
-    mask_sgls = mask_divid & mask_phase & mask_exp & \
-                mask_deg    & mask_depth & mask_speed
+    mask_sgls = mask_divid & mask_phase & mask_exp & mask_deg & mask_depth & mask_speed
 
     # Extract glide start/stop indices within above constraints
-    start_ind = sgls[mask_sgls]['start_idx'].values
-    stop_ind  = sgls[mask_sgls]['stop_idx'].values
+    start_ind = sgls[mask_sgls]["start_idx"].values
+    stop_ind = sgls[mask_sgls]["stop_idx"].values
 
     # Create mask for all data from valid start/stop indices
-    mask_data_sgl = mask_from_noncontiguous_indices(n_samples, start_ind,
-                                                               stop_ind)
+    mask_data_sgl = mask_from_noncontiguous_indices(n_samples, start_ind, stop_ind)
     # Catch error with no matching subglides
     num_valid_sgls = len(numpy.where(mask_sgls)[0])
     if num_valid_sgls == 0:
-        raise SystemError('No sublides found meeting filter criteria')
+        raise SystemError("No sublides found meeting filter criteria")
 
     return mask_data_sgl, mask_sgls
