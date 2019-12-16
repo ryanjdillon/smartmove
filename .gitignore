@@ -1,3 +1,6 @@
+# Version file
+src/smartmove/_version.py
+
 # Swap files
 ~*
 *.swp
