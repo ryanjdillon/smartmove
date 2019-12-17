@@ -16,7 +16,12 @@ from os.path import join as _join
 import matplotlib.pyplot as plt
 import numpy
 import pandas
-import pyotelem
+from pandas.plotting import register_matplotlib_converters
+from pyotelem import dynamics as pdynamics
+from pyotelem import dives as pdives
+from pyotelem import glides as pglides
+from pyotelem import utils as ptu
+from pyotelem import dsp as pdsp
 from pyotelem.plots import plotdynamics, plotglides, plotdives, plotdsp
 import yamlord
 
@@ -24,6 +29,8 @@ from smartmove import utils
 from smartmove.config import paths, fnames
 from smartmove.glideid import utils_lleo, utils_ctd
 
+
+register_matplotlib_converters()
 
 def run(
     path_project, cfg_project, cfg_glide, cfg_filt, sgl_dur, plots=True, debug=False
@@ -109,7 +116,7 @@ def run(
     # Get user selection of tag data paths to process
     path_exps = sorted(path_exps)
     msg = "paths numbers to process:\n"
-    process_ind = pyotelem.utils.get_dir_indices(msg, path_exps)
+    process_ind = ptu.get_dir_indices(msg, path_exps)
 
     # Process selected tag experiments
     for i in process_ind:
@@ -329,8 +336,8 @@ def _process_tag_data(
         plotdives.plot_triaxial_depths_speed(tag)
 
         # Get indices user input - mask
-        exp_idxs[0] = pyotelem.utils.recursive_input("Analysis start index", int)
-        exp_idxs[1] = pyotelem.utils.recursive_input("Analysis stop index", int)
+        exp_idxs[0] = ptu.recursive_input("Analysis start index", int)
+        exp_idxs[1] = ptu.recursive_input("Analysis stop index", int)
 
         cfg_exp[path_exp] = OrderedDict()
         cfg_exp[path_exp]["start_idx"] = exp_idxs[0]
@@ -350,14 +357,14 @@ def _process_tag_data(
     # 1.3 Calculate pitch, roll, and heading
     # --------------------------------------------------------------------------
     print("* Calculate pitch, roll, heading\n")
-    tag["p"], tag["r"], tag["h"] = pyotelem.dynamics.prh(
+    tag["p"], tag["r"], tag["h"] = pdynamics.prh(
         tag["Ax_g"].values, tag["Ay_g"].values, tag["Az_g"].values
     )
 
     # 2 Define dives
     # --------------------------------------------------------------------------
     print("* Define dives\n")
-    dives, masks["dive"] = pyotelem.dives.finddives2(
+    dives, masks["dive"] = pdives.finddives2(
         tag["depth"].values, cfg_glide["min_depth"]
     )
 
@@ -371,7 +378,7 @@ def _process_tag_data(
     # NOTE change `stroke_ratio` here to modify selectio method
     # should be OK other than t_max, these values are too high
     if debug is False:
-        cutoff_frq, stroke_frq, stroke_ratio = pyotelem.glides.get_stroke_freq(
+        cutoff_frq, stroke_frq, stroke_ratio = pglides.get_stroke_freq(
             Ax_g,
             Az_g,
             fs_a,
@@ -393,12 +400,12 @@ def _process_tag_data(
     order = 5
     cutoff_str = str(cfg["cutoff_frq"])
     for btype, suffix in zip(["low", "high"], ["lf", "hf"]):
-        b, a, = pyotelem.dsp.butter_filter(
+        b, a, = pdsp.butter_filter(
             cfg["cutoff_frq"], fs_a, order=order, btype=btype
         )
         for param in ["Ax_g", "Ay_g", "Az_g"]:
             key = "{}_{}_{}".format(param, suffix, cutoff_str)
-            tag[key] = pyotelem.dsp.butter_apply(b, a, tag[param].values)
+            tag[key] = pdsp.butter_apply(b, a, tag[param].values)
 
     # Plot low and high frequency accelerometer signals
     if plots is True:
@@ -427,7 +434,7 @@ def _process_tag_data(
     #       signal to avoid incorporating signals above the stroking periods
     # --------------------------------------------------------------------------
     print("* Calculate low-pass pitch, roll, heading\n")
-    prh_lf = pyotelem.dynamics.prh(
+    prh_lf = pdynamics.prh(
         tag["Ax_g_lf_" + cutoff_str].values,
         tag["Ay_g_lf_" + cutoff_str].values,
         tag["Az_g_lf_" + cutoff_str].values,
@@ -438,7 +445,7 @@ def _process_tag_data(
     # 4 Define precise descent and ascent phases
     # --------------------------------------------------------------------------
     print("* Get precise indices of descents, ascents, phase and bottom\n")
-    masks["des"], masks["asc"] = pyotelem.dives.get_des_asc2(
+    masks["des"], masks["asc"] = pdives.get_des_asc2(
         tag["depth"].values,
         masks["dive"].values,
         tag["p_lf"].values,
@@ -496,8 +503,8 @@ def _process_tag_data(
         Ax_g_hf = tag["Ax_g_hf_" + cutoff_str][masks["exp"]].values
         Az_g_hf = tag["Az_g_hf_" + cutoff_str][masks["exp"]].values
 
-        f_wx, Sx, Px, dpx = pyotelem.dsp.calc_PSD_welch(Ax_g_hf, fs_a, nperseg=512)
-        f_wz, Sz, Pz, dpz = pyotelem.dsp.calc_PSD_welch(Az_g_hf, fs_a, nperseg=512)
+        f_wx, Sx, Px, dpx = pdsp.calc_PSD_welch(Ax_g_hf, fs_a, nperseg=512)
+        f_wz, Sz, Pz, dpz = pdsp.calc_PSD_welch(Az_g_hf, fs_a, nperseg=512)
 
         fig, (ax1, ax2) = plt.subplots(1, 2)
         ax1.plot(f_wx, Sx, label="hf-x PSD")
@@ -511,7 +518,7 @@ def _process_tag_data(
         plt.show()
 
         # Get user selection for J - select one for both axes
-        cfg["J"] = pyotelem.utils.recursive_input("J (fluke magnitude)", float)
+        cfg["J"] = ptu.recursive_input("J (fluke magnitude)", float)
     else:
         cfg["J"] = 0.4
 
@@ -554,7 +561,7 @@ def _process_glides(cfg_glide, tag, fs_a, dives, masks, plots=True, debug=False)
     cutoff_str = str(cfg_glide["cutoff_frq"])
 
     # Get GL from dorso-ventral axis of the HPF acc signal
-    GL = pyotelem.glides.get_stroke_glide_indices(
+    GL = pglides.get_stroke_glide_indices(
         tag["Az_g_hf_" + cutoff_str].values, fs_a, cfg_glide["J"], cfg_glide["t_max"]
     )
 
@@ -594,14 +601,14 @@ def _process_sgls(tag, fs_a, dives, GL, sgl_dur):
     # --------------------------------------------------------------------------
     print("* Make sub-glides, duration {}\n".format(sgl_dur))
 
-    SGL, data_sgl_mask = pyotelem.glides.split_glides(len(tag), sgl_dur, fs_a, GL)
+    SGL, data_sgl_mask = pglides.split_glides(len(tag), sgl_dur, fs_a, GL)
 
     # 9 Generate summary information table for sub-glides
     # --------------------------------------------------------------------------
     pitch_lf_deg = numpy.rad2deg(tag["p_lf"].values)
 
     print("* Generate summary information table for sub-glides\n")
-    sgls = pyotelem.glides.calc_glide_des_asc(
+    sgls = pglides.calc_glide_des_asc(
         tag["depth"].values,
         tag["p_lf"].values,
         tag["r_lf"].values,
