@@ -4,10 +4,11 @@ import yamlord
 
 import pandas
 import datetime
-import pyotelem
+import pyotelem.utils
 
 from smartmove.config import paths, fnames
-from smartmove import ann, glideid, visuals
+from smartmove import ann, visuals
+from smartmove.glideid import glideid
 
 
 class Analysis(object):
@@ -48,7 +49,7 @@ class Analysis(object):
             for `cutoff_freq` and `J` will be set to generic values and diagnostic
             plots of the `speed` parameter in `tag` will be displayed.
         """
-        glideid.glideid.run(
+        glideid.run(
             self.path_project,
             self.cfg_project,
             self.cfg_glide,
@@ -155,8 +156,9 @@ class Analysis(object):
     def _read_file(self, fname: str) -> OrderedDict:
         return yamlord.read_yaml(os.path.join(self.path_project, fname))
 
-    def _read_pickle(self, path_output: str, fname: str) -> pandas.DataFrame:
-        return pandas.read_pickle(os.path.join(self.path_output, fname))
+    @staticmethod
+    def _read_pickle(path_output: str, fname: str) -> pandas.DataFrame:
+        return pandas.read_pickle(os.path.join(path_output, fname))
 
     def _update_ann_analyses(self):
         """Update list of available ANN analyses"""
@@ -178,14 +180,14 @@ class Analysis(object):
             os.path.join(path_output, fnames["cfg"]["ann"])
         )
 
-        self.train = self._read_pickle(path_output, fnames["ann"]["train"])
-        self.valid = self._read_pickle(path_output, fnames["ann"]["valid"])
-        self.test = self._read_pickle(path_output, fnames["ann"]["test"])
+        self.train = Analysis._read_pickle(path_output, fnames["ann"]["train"])
+        self.valid = Analysis._read_pickle(path_output, fnames["ann"]["valid"])
+        self.test = Analysis._read_pickle(path_output, fnames["ann"]["test"])
 
-        self.results_tune = self._read_pickle(path_output, fnames["ann"]["tune"])
-        self.results_dataset = self._read_pickle(path_output, fnames["ann"]["dataset"])
-        self.tune_cms = self._read_pickle(path_output, fnames["ann"]["cms_tune"])
-        self.tune_cms = self._read_pickle(path_output, fnames["ann"]["cms_data"])
+        self.results_tune = Analysis._read_pickle(path_output, fnames["ann"]["tune"])
+        self.results_dataset = Analysis._read_pickle(path_output, fnames["ann"]["dataset"])
+        self.tune_cms = Analysis._read_pickle(path_output, fnames["ann"]["cms_tune"])
+        self.tune_cms = Analysis._read_pickle(path_output, fnames["ann"]["cms_data"])
 
         fp_post = os.path.join(
             self.path_project, paths["ann"], self.current_ann, fnames["ann"]["post"]
