@@ -1,0 +1,15 @@
+cartopy
+chardet
+click
+cython
+gsw
+matplotlib
+numpy
+pandas
+pyotelem>=0.4.6
+pylleo>=0.4.2
+pyproj
+scipy
+scikit-learn
+seaborn
+yamlord

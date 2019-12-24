@@ -1,0 +1,27 @@
+paths:
+  # Contains accelerometer data for each experiment to be analyzed
+  acc: data_accelerometer
+  
+  # Contains csv and pandas pickled dataframes of bc measurements
+  csv: data_csv
+  
+  # Containes data from CTD measurements
+  ctd: data_ctd
+  
+  # Contains subglide data directories for each processed experiement
+  glide: data_glide
+  
+  # Path for MCMC model input files
+  ann: model_ann
+cal:
+  # Containes acceleration calibration YAMLs for associated tag ID
+  # Sensors should be calibrated per month--closest calibration used for analysis
+  w190pd3gt:
+    34839:
+      2015:
+        03: 20150306_W190-PD3GT_34839_Notag_Control
+  
+    34840:
+      2016:
+        04: 20160418_W190PD3GT_34840_Skinny_2Neutral
+  

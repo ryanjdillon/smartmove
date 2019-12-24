@@ -1,6 +1,12 @@
+# Version file
+src/smartmove/_version.py
+
 # Swap files
 ~*
 *.swp
+
+# Ignore paths
+LOCAL/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
